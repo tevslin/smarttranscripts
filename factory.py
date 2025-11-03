@@ -1,6 +1,7 @@
 import json, os, sys
 from datetime import datetime
 import importlib.util
+import check_ffmpeg
 
 from videotools import download_audio
 from transcription import transcribe_audio
@@ -127,6 +128,8 @@ def main():
     parser.add_argument("--jurisdiction", help="Jurisdiction name (e.g., 'San Francisco Government')", default="")
     parser.add_argument("--getter-script", default="customgetter.py", help="Script to use for getting recent meetings in batch mode.")
     args = parser.parse_args()
+
+    check_ffmpeg.check_ffmpeg_installed() # Call the check here
 
     if args.url:
         members = None

@@ -1,5 +1,7 @@
 .env
 temp_*
+*.log
+*.bak
 
 # Ignore all directories in the root
 /*/

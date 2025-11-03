@@ -14,12 +14,32 @@ The goal of this project is to provide a flexible framework for converting video
 
 ## Installation
 
+This project was developed and tested using Python 3.13.5.
+
+
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/tevslin/smarttranscripts.git # Or your forked repository
     cd smarttranscripts
     ```
-2.  **Create and activate a Python virtual environment (recommended):**
+2.  **Install FFmpeg:**
+
+    This project requires `ffmpeg` to process audio from video files. If FFMPEG is not already properly installed, you will need to install it.
+
+    *   **On macOS (using Homebrew):**
+        ```bash
+        brew install ffmpeg
+        ```
+    *   **On Windows:**
+        Download a build from the official [FFmpeg website](https://ffmpeg.org/download.html) and add the `bin` directory to your system's PATH.
+
+3.  **Verify FFmpeg Installation:**
+    Run the `check_ffmpeg.py` script to confirm `ffmpeg` is correctly installed and accessible.
+    ```bash
+    python check_ffmpeg.py
+    ```
+
+4.  **Create and activate a Python virtual environment (recommended):**
     ```bash
     python -m venv venv
     # On Windows:
@@ -49,15 +69,13 @@ python factory.py \
     --url "https://www.youtube.com/watch?v=XtF_Q5nF1kU" \
     --committee "Schools Committee" \
     --date "2025-10-10" \
-    --jurisdiction "Sample Jurisdiction" # Optional, but good practice
+    --jurisdiction "Sample Jurisdiction"
 ```
 This command will:
 *   Download the audio from the YouTube video.
 *   Transcribe the audio using Deepgram.
 *   Use OpenAI to identify speakers and generate an agenda.
 *   Create an interactive HTML SmartTranscript in the `localhost/meetings/Schools_Committee/2025-10-10/` directory.
-
-You can then open the generated `transcript.html` file in your web browser.
 
 After generation, you will need to start a local web server from the `localhost` directory (see 'Local Hosting' below) and then navigate to the appropriate URL in your browser (e.g., `http://localhost:8000/meetings/Schools_Committee/2025-10-10/transcript.html`). Directly opening the HTML file will not work due to browser security restrictions.
 
@@ -72,6 +90,7 @@ After generation, you will need to start a local web server from the `localhost`
 *   **`meetingreporter.py`**: A core module that takes transcription data and generates the final, interactive HTML SmartTranscript page.
 *   **`transcription.py`**: A module responsible for sending audio files to the Deepgram API for transcription.
 *   **`videotools.py`**: A utility for downloading audio from various video stream URLs using `yt-dlp`.
+*   **`check_ffmpeg.py`**: A standalone script to verify if `ffmpeg` is correctly installed and accessible in your system's PATH. Run this script to confirm your `ffmpeg` setup.
 *   **`customgetter.py`**: An example "getter" script that finds recent meetings for a specific Granicus-based site. You will need to create your own version of this to support other jurisdictions or sources.
 *   **`envloader.py`**: A small utility to load environment variables from `.env` files.
 *   **`committees.json`**: A JSON file that defines the committees to be processed in batch mode, including their names, IDs, and optionally members.
