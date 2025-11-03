@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>San Francisco SmartTranscripts</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1648.0.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Add styles for the collapsible directory */
+        #meeting-list-container ul, #meeting-list-container ul ul {
+            list-style-type: none;
+            padding-left: 1rem;
+        }
+        #meeting-list li {
+             list-style-type: none;
+        }
+        .caret {
+            cursor: pointer;
+            user-select: none; /* Prevent text selection */
+        }
+        .caret::before {
+            content: "\25B6"; /* Right-pointing triangle */
+            color: black;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .caret-down::before {
+            transform: rotate(90deg);
+        }
+        .nested {
+            display: none;
+            padding-left: 1rem;
+        }
+        .active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="header-placeholder">
+        <header class="page-header">
+            <h1><a href="/index.html">SmartTranscripts</a></h1>
+        </header>
+    </div>
+    <div id="main-content">
+        <header>
+            <h2>San Francisco City Government Meetings</h2>
+        </header>
+        
+        <main id="content-container">
+            <div id="meeting-list-container">
+                <ul id="meeting-list">
+                    <!-- Meetings will be loaded here by loader.js -->
+                </ul>
+            </div>
+            <div id="agenda-display">
+                <div id="agenda-placeholder" class="welcome-message">
+                    <h2>Select a meeting from one of the committees on the left to see its details.</h2>
+                </div>
+                <div id="agenda-content" style="display:none;">
+                    <h2 id="agenda-title"></h2>
+                    <button id="open-transcript-button">Open SmartTranscript</button>
+                    <a id="open-official-transcript-button" href="#" target="_blank" style="display:none;">View Official Transcript</a>
+                    <ul id="agenda-items">
+                        <!-- Agenda will be loaded here when a meeting is clicked -->
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="footer-placeholder">
+        <footer class="page-footer">
+            <button id="about-button" class="standard-button">About this Project</button>
+        </footer>
+    </div>
+    <script src="loader.js"></script>
+    <script src="common.js" defer></script>
+</body>
+</html>

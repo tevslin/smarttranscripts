@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{PAGE_TITLE}}</title>
+    <meta property="og:title" content="{{OG_TITLE}}" />
+    <meta property="og:description" content="{{OG_DESCRIPTION}}" />
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/dropdown_styles.css">
+</head>
+<body>
+    <div id="header-placeholder">
+        <header class="page-header">
+            <h1><a href="/index.html">{{APP_TITLE}} </a> </h1><h2 id="meeting-title">{{MEETING_TITLE}}  </h2>
+			<nav id="viewer-menu">
+                <!-- Menus will be dynamically inserted here by viewer_logic.js -->
+            </nav>
+        </header>
+    </div>
+    <div id="main-content">
+        
+        <main id="content-container">
+            <div id="left-pane">
+                <nav id="agenda">
+                    <ul>
+                        {{AGENDA_HTML}}
+                    </ul>
+                </nav>
+                <div id="video-pane">
+                    <div id="video-player-container">
+                        <!-- Player and controls will be rendered here by JS -->
+                    </div>
+                </div>
+            </div>
+            <div id="transcript-pane">
+				<h2> Transcript: Select text below to play or share a clip</h2>
+                <div id="transcript-container">
+                    <div id="text-container">
+                        {{TRANSCRIPT_HTML}}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <!-- Modals -->
+    <div id="about-modal" class="modal" style="display:none;"><div class="modal-content"><span class="close-button">&times;</span><div id="about-content"></div></div></div>
+    <div id="share-modal" class="modal" style="display:none;"><div class="modal-content"><span class="close-button">&times;</span><h2>Share</h2><div id="share-clip-options" style="display:none;"><label><input type="checkbox" id="share-clip-checkbox"> Share as clip</label><span id="share-time-range"></span></div><div id="share-buttons"></div></div></div>
+
+    <!-- Data Island -->
+    <script id="meeting-data" type="application/json">
+        {{MEETING_DATA_JSON}}
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="/viewer_logic.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,677 @@
+{
+    "jurisdiction": "San Francisco Government",
+    "committees": [
+    {
+        "name": "Board of Supervisors",
+        "id": "10",
+        "parent_committee": null,
+        "process_count": 1,
+        "members": [
+            {
+                "name": "Rafael Mandelman",
+                "title": "President, District 8",
+                "email": "Rafael.Mandelman@sfgov.org"
+            },
+            {
+                "name": "Connie Chan",
+                "title": "Supervisor, District 1",
+                "email": "Connie.Chan@sfgov.org"
+            },
+            {
+                "name": "Catherine Stefani",
+                "title": "Supervisor, District 2",
+                "email": "Catherine.Stefani@sfgov.org"
+            },
+            {
+                "name": "Aaron Peskin",
+                "title": "Supervisor, District 3",
+                "email": "Aaron.Peskin@sfgov.org"
+            },
+            {
+                "name": "Joel Engardio",
+                "title": "Supervisor, District 4",
+                "email": "Joel.Engardio@sfgov.org"
+            },
+            {
+                "name": "Dean Preston",
+                "title": "Supervisor, District 5",
+                "email": "Dean.Preston@sfgov.org"
+            },
+            {
+                "name": "Matt Dorsey",
+                "title": "Supervisor, District 6",
+                "email": "Matt.Dorsey@sfgov.org"
+            },
+            {
+                "name": "Myrna Melgar",
+                "title": "Supervisor, District 7",
+                "email": "Myrna.Melgar@sfgov.org"
+            },
+            {
+                "name": "Jackie Fielder",
+                "title": "Supervisor, District 9",
+                "email": "Jackie.Fielder@sfgov.org"
+            },
+            {
+                "name": "Shamann Walton",
+                "title": "Supervisor, District 10",
+                "email": "Shamann.Walton@sfgov.org"
+            },
+            {
+                "name": "Ahsha Safai",
+                "title": "Supervisor, District 11",
+                "email": "Ahsha.Safai@sfgov.org"
+            }
+        ]
+    },
+    {
+        "name": "Budget and Appropriations Committee",
+        "id": "207",
+        "parent_committee": "Board of Supervisors",
+        "process_count": 0,
+        "members": [
+            {
+                "name": "Connie Chan",
+                "title": "Supervisor",
+                "email": "Connie.Chan@sfgov.org"
+            },
+            {
+                "name": "Matt Dorsey",
+                "title": "Supervisor",
+                "email": "Matt.Dorsey@sfgov.org"
+            },
+            {
+                "name": "Joel Engardio",
+                "title": "Supervisor",
+                "email": "Joel.Engardio@sfgov.org"
+            },
+            {
+                "name": "Shamann Walton",
+                "title": "Supervisor",
+                "email": "Shamann.Walton@sfgov.org"
+            },
+            {
+                "name": "Rafael Mandelman",
+                "title": "Supervisor",
+                "email": "Rafael.Mandelman@sfgov.org"
+            }
+        ]
+    },
+    {
+        "name": "Budget and Finance Committee",
+        "id": "7",
+        "parent_committee": "Board of Supervisors",
+        "process_count": 0,
+        "members": [
+            {
+                "name": "Connie Chan",
+                "title": "Supervisor",
+                "email": "Connie.Chan@sfgov.org"
+            },
+            {
+                "name": "Matt Dorsey",
+                "title": "Supervisor",
+                "email": "Matt.Dorsey@sfgov.org"
+            },
+            {
+                "name": "Joel Engardio",
+                "title": "Supervisor",
+                "email": "Joel.Engardio@sfgov.org"
+            }
+        ]
+    },
+    {
+        "name": "Government Audit and Oversight Committee",
+        "id": "11",
+        "parent_committee": "Board of Supervisors",
+        "process_count": 0,
+        "members": [
+            {
+                "name": "Jackie Fielder",
+                "title": "Supervisor",
+                "email": "Jackie.Fielder@sfgov.org"
+            },
+            {
+                "name": "Danny Sauter",
+                "title": "Supervisor",
+                "email": "Danny.Sauter@sfgov.org"
+            },
+            {
+                "name": "Stephen Sherrill",
+                "title": "Supervisor",
+                "email": "Stephen.Sherrill@sfgov.org"
+            }
+        ]
+    },
+    {
+        "name": "Homelessness and Behavioral Health Select Committee",
+        "id": "225",
+        "parent_committee": "Board of Supervisors",
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Land Use and Transportation Committee",
+        "id": "177",
+        "parent_committee": "Board of Supervisors",
+        "process_count": 0,
+        "members": [
+            {
+                "name": "Myrna Melgar",
+                "title": "Supervisor",
+                "email": "Myrna.Melgar@sfgov.org"
+            },
+            {
+                "name": "Chyanne Chen",
+                "title": "Supervisor",
+                "email": "Chyanne.Chen@sfgov.org"
+            },
+            {
+                "name": "Bilal Mahmood",
+                "title": "Supervisor",
+                "email": "Bilal.Mahmood@sfgov.org"
+            }
+        ]
+    },
+    {
+        "name": "Public Safety and Neighborhood Services Committee",
+        "id": "178",
+        "parent_committee": "Board of Supervisors",
+        "process_count": 0,
+        "members": [
+            {
+                "name": "Matt Dorsey",
+                "title": "Supervisor",
+                "email": "Matt.Dorsey@sfgov.org"
+            },
+            {
+                "name": "Bilal Mahmood",
+                "title": "Supervisor",
+                "email": "Bilal.Mahmood@sfgov.org"
+            },
+            {
+                "name": "Danny Sauter",
+                "title": "Supervisor",
+                "email": "Danny.Sauter@sfgov.org"
+            }
+        ]
+    },
+    {
+        "name": "Rules Committee",
+        "id": "13",
+        "parent_committee": "Board of Supervisors",
+        "process_count": 0,
+        "members": [
+            {
+                "name": "Shamann Walton",
+                "title": "Supervisor",
+                "email": "Shamann.Walton@sfgov.org"
+            },
+            {
+                "name": "Stephen Sherrill",
+                "title": "Supervisor",
+                "email": "Stephen.Sherrill@sfgov.org"
+            },
+            {
+                "name": "Rafael Mandelman",
+                "title": "Supervisor",
+                "email": "Rafael.Mandelman@sfgov.org"
+            }
+        ]
+    },
+    {
+        "name": "Aging and Adult Services",
+        "id": "174",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Arts Commission",
+        "id": "230",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Arts Commission Committee",
+        "id": "233",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Board of Appeals",
+        "id": "6",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Building Inspection Commission/Abatement Appeals Board",
+        "id": "14",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Community Investment and Infrastructure, Commission",
+        "id": "169",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Citizens' General Obligation Bond Oversight Committee",
+        "id": "191",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Disability and Aging Services Commission",
+        "id": "206",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Disaster Council",
+        "id": "15",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Education, SFUSD Board of",
+        "id": "47",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": [
+            {
+                "name": "Phil Kim",
+                "title": "President",
+                "email": "philkim@sfusd.edu"
+            },
+            {
+                "name": "Jaime Huling",
+                "title": "Vice President"
+            },
+            {
+                "name": "Matt Alexander",
+                "title": "Commissioner",
+                "email": "mattelxandersf@gmail.com"
+            },
+            {
+                "name": "Alida Fisher",
+                "title": "Commissioner",
+                "email": "alidafisher@sfusd.edu"
+            },
+            {
+                "name": "Parag Gupta",
+                "title": "Commissioner"
+            },
+            {
+                "name": "Supryia Ray",
+                "title": "Commissioner"
+            },
+            {
+                "name": "Lisa Weissman-Ward",
+                "title": "Commissioner"
+            }
+        ]
+    },
+    {
+        "name": "Entertainment Commission",
+        "id": "99",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Environment, Commission on the",
+        "id": "165",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Ethics Commission",
+        "id": "142",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Fire Commission",
+        "id": "180",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Health Commission, Department of Public Health",
+        "id": "171",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Health Service Board",
+        "id": "168",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Historic Preservation Commission",
+        "id": "166",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Homelessness Oversight Commission",
+        "id": "227",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Housing Authority Board of Directors",
+        "id": "229",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Human Rights Commission",
+        "id": "156",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Local Agency Formation Commission",
+        "id": "16",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Mayor's Disability Council",
+        "id": "17",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Municipal Transportation Agency (SFMTA)",
+        "id": "55",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Our City, Our Home Oversight Committee",
+        "id": "209",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Planning Commission",
+        "id": "20",
+        "parent_committee": null,
+        "process_count": 1,
+        "members": [
+            {
+                "name": "Lydia So",
+                "title": "President",
+                "email": "Lydia.So@sfgov.org"
+            },
+            {
+                "name": "Kathrin Moore",
+                "title": "Vice President",
+                "email": "Kathrin.Moore@sfgov.org"
+            },
+            {
+                "name": "Derek W. Braun",
+                "title": "Commissioner",
+                "email": "Derek.Braun@sfgov.org"
+            },
+            {
+                "name": "Amy Campbell",
+                "title": "Commissioner",
+                "email": "Amy.Campbell@sfgov.org"
+            },
+            {
+                "name": "Theresa Imperial",
+                "title": "Commissioner",
+                "email": "Theresa.Imperial@sfgov.org"
+            },
+            {
+                "name": "Sean McGarry",
+                "title": "Commissioner",
+                "email": "Sean.McGarry@sfgov.org"
+            },
+            {
+                "name": "Gilbert Williams",
+                "title": "Commissioner",
+                "email": "Gilbert.Williams@sfgov.org"
+            }
+        ]
+    },
+    {
+        "name": "Police Commission",
+        "id": "21",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Port Commission",
+        "id": "92",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Public Utilities Commission",
+        "id": "22",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Public Works Commission",
+        "id": "218",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Recreation and Park Commission",
+        "id": "91",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Redistricting Task Force",
+        "id": "155",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Refuse Rate Board",
+        "id": "226",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Retirement Board, San Francisco Employees'",
+        "id": "175",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Sanitation & Streets Commission",
+        "id": "219",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Sheriff's Department Oversight Board",
+        "id": "223",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Small Business Commission",
+        "id": "45",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Taxicab Commission",
+        "id": "28",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Transbay Joint Powers Authority Board of Directors",
+        "id": "29",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Transportation Authority Full Board",
+        "id": "24",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Transportation Authority Finance Committee",
+        "id": "23",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Transportation Authority Personnel Committee",
+        "id": "27",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Transportation Authority Plans & Programs Committee",
+        "id": "25",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Transportation Authority Vision Zero Committee",
+        "id": "172",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Treasure Island Development Authority",
+        "id": "181",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Treasure Island Development Authority Committee",
+        "id": "193",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Treasure Island Mobility Management Agency",
+        "id": "179",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Various Commissions",
+        "id": "30",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Mayor's Press Conference",
+        "id": "18",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Building SF",
+        "id": "3",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Commonwealth Club",
+        "id": "143",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Main Stage",
+        "id": "57",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Meet Your District Supervisor",
+        "id": "107",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "City Events, Info & Summits",
+        "id": "74",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Election Programming",
+        "id": "42",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    },
+    {
+        "name": "Press Conference",
+        "id": "38",
+        "parent_committee": null,
+        "process_count": 0,
+        "members": []
+    }
+]
+
+}
