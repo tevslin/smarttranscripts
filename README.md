@@ -16,8 +16,8 @@ The goal of this project is to provide a flexible framework for converting video
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/tevslin/goldendomevt.git # Or your forked repository
-    cd goldendomevt/implementations/smarttranscripts
+    git clone https://github.com/tevslin/smarttranscripts.git # Or your forked repository
+    cd smarttranscripts
     ```
 2.  **Create and activate a Python virtual environment (recommended):**
     ```bash
