@@ -40,6 +40,10 @@ def process_single_meeting(
 
     os.makedirs(wip_meeting_path, exist_ok=True)
     os.makedirs(final_meeting_path, exist_ok=True)
+    
+    if os.path.exists(os.path.join(final_meeting_path, 'transcript.html')):
+        print(f"  - Skipping {meeting_date}: Final transcript.html already exists.")
+        return None
 
     meta = {
         "video_url": video_url,
@@ -119,7 +123,8 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", help="Video URL to process directly")
-    parser.add_argument("--committee", help="Committee name", default="UnknownCommittee")
+    parser.add_argument("--committee", help="Committee name for oneoff processing", default="UnknownCommittee")
+    parser.add_argument("--master-list",help="Master list for batch processing",default=COMMITTEES_FILE)
     parser.add_argument("--date", help="Meeting date (YYYY-MM-DD)")
     parser.add_argument("--wip", help="WIP folder path", default=WIP_DIR)
     parser.add_argument("--meetings", help="Meetings folder path", default=MEETINGS_DIR)
@@ -162,11 +167,11 @@ def main():
         print(f"Error: Could not import get_recent_meetings from '{args.getter_script}'. {e}")
         sys.exit(1)
 
-    if not os.path.exists(COMMITTEES_FILE):
+    if not os.path.exists(args.master_list):
         print(f"Error: committees.json not found.")
         return
 
-    with open(COMMITTEES_FILE, "r") as f:
+    with open(args.master_list, "r") as f:
         loaded_data = json.load(f)
 
     jurisdiction = loaded_data.get("jurisdiction", "")
@@ -203,8 +208,9 @@ def main():
                     structured_only=args.structured_only,
                     jurisdiction=jurisdiction,
                 )
-                consecutive_failures = 0
-                print(f"  - Done: {output}")
+                if output:
+                    consecutive_failures = 0
+                    print(f"  - Done: {output}")
             except Exception as e:
                 print(f"  - ERROR: {e}")
                 consecutive_failures += 1
