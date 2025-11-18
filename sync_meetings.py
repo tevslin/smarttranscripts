@@ -67,20 +67,21 @@ def invalidate_cloudfront_cache(distribution_id, items):
     except ClientError as e:
         print(f"Error creating invalidation: {e}")
 
-def sync_meetings_to_s3(source_dir: str):
+def sync_meetings_to_s3(source_dir: str, bucketname: str = None):
     """
     Synchronizes the local meetings directory with the S3 bucket and generates a JSON index
     based on the final state of the S3 bucket.
     """
     # --- Load Configuration ---
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-    env_path = os.path.join(project_root, '.env')
-    load_dotenv(dotenv_path=env_path)
-
-    BUCKET_NAME = os.getenv("BUCKET_NAME")
+    BUCKET_NAME = bucketname
+    if not BUCKET_NAME:
+        env_path = os.path.join(project_root, '.env')
+        load_dotenv(dotenv_path=env_path)
+        BUCKET_NAME = os.getenv("BUCKET_NAME")
     
     if not BUCKET_NAME:
-        print(f"{RED}Error: BUCKET_NAME must be set in the .env file.{RESET}")
+        print(f"{RED}Error: BUCKET_NAME must be set in the .env file or passed as an argument.{RESET}")
         return
 
     local_meetings_dir = os.path.abspath(source_dir)
@@ -170,8 +171,13 @@ def main():
         default='localhost/meetings',
         help='Path to the local meetings directory to sync from. Defaults to "localhost/meetings".'
     )
+    parser.add_argument(
+        '--bucketname',
+        default=None,
+        help='The name of the s3 bucket to sync to. If not provided, the value is read from the .env file.'
+    )
     args = parser.parse_args()
-    sync_meetings_to_s3(source_dir=args.source_dir)
+    sync_meetings_to_s3(source_dir=args.source_dir, bucketname=args.bucketname)
 
 if __name__ == '__main__':
     main()
