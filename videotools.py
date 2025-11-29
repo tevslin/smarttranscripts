@@ -31,6 +31,44 @@ def download_audio(stream_url, output_filename):
         sys.stderr = log_file
 
         try:
+            # OPTIMIZATION: If it's a direct MP4 link, use ffmpeg to stream and extract audio directly.
+            # This avoids downloading the huge video file first.
+            if stream_url.lower().endswith('.mp4'):
+                print(f"Detected MP4 URL. Using direct ffmpeg streaming for: {stream_url}")
+                import subprocess
+                
+                # ffmpeg -i "url" -vn -acodec libmp3lame -q:a 2 "output.mp3"
+                # -vn: Disable video recording
+                # -acodec libmp3lame: Use LAME mp3 encoder
+                # -q:a 2: Variable bit rate, quality level 2 (good balance)
+                # -y: Overwrite output files without asking
+                
+                cmd = [
+                    'ffmpeg',
+                    '-y',
+                    '-i', stream_url,
+                    '-vn',
+                    '-acodec', 'libmp3lame',
+                    '-q:a', '2',
+                    final_filename
+                ]
+                
+                # Run ffmpeg, capturing output to the log file we opened
+                # We need to flush the python buffers to ensure log file order is roughly correct
+                sys.stdout.flush()
+                sys.stderr.flush()
+                
+                result = subprocess.run(cmd, stdout=log_file, stderr=log_file, text=True)
+                
+                if result.returncode == 0 and os.path.exists(final_filename):
+                     # Restore stdout to print success message
+                    sys.stdout = original_stdout
+                    print(f"Successfully streamed and extracted audio to {final_filename}")
+                    return final_filename
+                else:
+                    print(f"FFmpeg direct stream failed with return code {result.returncode}. Falling back to yt-dlp.")
+                    # Fall through to yt-dlp logic below if this fails
+
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'outtmpl': f'{temp_filename}',

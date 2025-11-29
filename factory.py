@@ -25,10 +25,14 @@ def process_single_meeting(
     parent_committee: str = None,
     structured_only: bool = False,
     jurisdiction: str = '',
+    download_url: str = None,
 ):
     """Run the full pipeline for a single meeting and return output paths."""
     committee_folder = committee_name.replace(" ", "_")
     parent_dir = parent_committee.replace(" ", "_") if parent_committee else None
+
+    # Use download_url if provided, otherwise fallback to video_url
+    actual_download_url = download_url if download_url else video_url
 
     # Hierarchical folder structure
     if parent_dir:
@@ -59,7 +63,7 @@ def process_single_meeting(
     audio_path = os.path.join(wip_meeting_path, "audio.mp3")
     if not os.path.exists(audio_path):
         print(f"  - Downloading audio for {meeting_date}...")
-        download_audio(video_url, audio_path)
+        download_audio(actual_download_url, audio_path)
     else:
         print(f"  - Audio already exists for {meeting_date}.")
 
@@ -207,6 +211,7 @@ def main():
                     parent_committee=committee.get("parent_committee"),
                     structured_only=args.structured_only,
                     jurisdiction=jurisdiction,
+                    download_url=meeting.get("download_url"),
                 )
                 if output:
                     consecutive_failures = 0

@@ -17,19 +17,28 @@ def get_video_url_from_player_page(player_url):
         response = requests.get(player_url, headers=headers)
         response.raise_for_status()
         
-        # This regex is proven to work for finding the m3u8 URL.
         m3u8_match = re.search(r'video_url="([^"]+\.m3u8[^"]*)"', response.text)
-        if m3u8_match:
-            return m3u8_match.group(1)
-        
-        # Fallback for other formats from the proven script
-        archive_match = re.search(r'archive_url:\s*\'(.*?)\'', response.text)
-        if archive_match:
-            return archive_match.group(1)
+        video_url = m3u8_match.group(1) if m3u8_match else None
 
-        return None
+        # Look for MP4 download link
+        mp4_match = re.search(r'href="([^"]+\.mp4)"', response.text)
+        download_url = mp4_match.group(1) if mp4_match else None
+
+        if not video_url:
+             # Fallback for other formats from the proven script
+            archive_match = re.search(r'archive_url:\s*\'(.*?)\'', response.text)
+            if archive_match:
+                video_url = archive_match.group(1)
+
+        if not download_url:
+            download_url = video_url
+
+        return {
+            'video_url': video_url,
+            'download_url': download_url
+        }
     except requests.exceptions.RequestException:
-        return None
+        return {'video_url': None, 'download_url': None}
 
 
 def get_recent_meetings(committee_id=10, start_date_str='2024_01_01', count=1):
@@ -83,15 +92,20 @@ def get_recent_meetings(committee_id=10, start_date_str='2024_01_01', count=1):
                 if not player_page_url:
                     continue
 
-                direct_video_url = get_video_url_from_player_page(player_page_url)
-                #print('dvurl',direct_video_url)
+                urls = get_video_url_from_player_page(player_page_url)
+                direct_video_url = urls.get('video_url')
+                download_url = urls.get('download_url')
                 
+                if not direct_video_url:
+                    continue
+
                 meeting_data = {
                     "name": columns[0].get('headers', [''])[0],
                     "date": meeting_date.strftime('%Y-%m-%d'),
                     "duration": columns[1].text.strip().replace('\xa0', ' '),
                     "player_page_url": player_page_url,
                     "video_url": direct_video_url,
+                    "download_url": download_url,
                     "agenda_url": None,
                     "minutes_url": None,
                     "transcript_url": None,
@@ -108,8 +122,15 @@ def get_recent_meetings(committee_id=10, start_date_str='2024_01_01', count=1):
                         meeting_data['minutes_url'] = full_url
                     elif 'transcriptviewer.php' in href.lower():
                         meeting_data['transcript_url'] = full_url
+
                     elif '.mp3' in href:
                         meeting_data['mp3_url'] = href
+                    elif '.mp4' in href:
+                         # Keep this as a backup if found in row, though player page is preferred
+                        meeting_data['download_url'] = href
+
+                if not meeting_data.get('download_url'):
+                    meeting_data['download_url'] = meeting_data['video_url']
 
                 all_meetings.append(meeting_data)
 
