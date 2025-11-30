@@ -105,6 +105,8 @@ These files form the front-end framework for the SmartTranscript viewer. They ar
 
 *   **`index.html`**: The main landing page for the collection of transcripts. Not needed if you are only making single SmartTranscripts.
 *   **`viewer_logic.js`**: The primary JavaScript file that "hydrates" the static HTML of a transcript, adding all interactivity like click-to-play, search, and sharing.
+*   **`directory.js`**: Scans the `meetings` directory to build the folder hierarchy for the navigation pane.
+*   **`toc_viewer.js`**: Controls the left-hand "Table of Contents" pane, including pinning, unpinning, and the flyout menu behavior.
 *   **`navigation.js`**: Handles the logic for the navigation pane, which allows browsing meetings by committee and date.
 *   **`style.css`**: The main stylesheet that defines the look and feel of the SmartTranscript viewer.
 *   **`dropdown_styles.css`**: Specific styles for the dropdown menus used in the viewer.

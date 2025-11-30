@@ -4,7 +4,8 @@ style.css
 dropdown_styles.css
 viewer_logic.js
 about.html
-common.js
+directory.js
+toc_viewer.js
 tour.js
 tour.css
 navigation.js

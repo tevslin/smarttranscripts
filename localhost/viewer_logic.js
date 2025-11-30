@@ -8,162 +8,162 @@ window.activeVideoPlayer = null;
 
 
 function formatTime(seconds) {
-	const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-	const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-	const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-	return `${h}:${m}:${s}`;
+    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${h}:${m}:${s}`;
 }
 
 // --- Click-based Dropdown Logic ---
 function setupDropdownMenus() {
-  const menuItems = document.querySelectorAll('.menu-item');
+    const menuItems = document.querySelectorAll('.menu-item');
 
-  menuItems.forEach(menuItem => {
-    const button = menuItem.querySelector('button');
-    if (button && !button.dataset.listenerAttached) {
-      button.dataset.listenerAttached = 'true'; // mark as done
+    menuItems.forEach(menuItem => {
+        const button = menuItem.querySelector('button');
+        if (button && !button.dataset.listenerAttached) {
+            button.dataset.listenerAttached = 'true'; // mark as done
 
-      button.addEventListener('click', event => {
-        event.stopPropagation();
-        const isAlreadyOpen = menuItem.classList.contains('menu-open');
-        
-        document.querySelectorAll('.menu-item').forEach(item => {
-          item.classList.remove('menu-open');
-        });
+            button.addEventListener('click', event => {
+                event.stopPropagation();
+                const isAlreadyOpen = menuItem.classList.contains('menu-open');
 
-        if (!isAlreadyOpen) {
-          menuItem.classList.add('menu-open');
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    item.classList.remove('menu-open');
+                });
+
+                if (!isAlreadyOpen) {
+                    menuItem.classList.add('menu-open');
+                }
+            });
         }
-      });
-    }
-  });
-
-  // Attach window listener once
-  if (!window.dropdownCloseListenerAttached) {
-    window.addEventListener('click', () => {
-      document.querySelectorAll('.menu-item').forEach(item => {
-        item.classList.remove('menu-open');
-      });
     });
-    window.dropdownCloseListenerAttached = true;
-  }
+
+    // Attach window listener once
+    if (!window.dropdownCloseListenerAttached) {
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('menu-open');
+            });
+        });
+        window.dropdownCloseListenerAttached = true;
+    }
 }
 
-function updatePlayerForTime(startTimeParam,endTimeParam){
-	setTimeout(() => {
-			const allUtterances = Array.from(document.querySelectorAll('.utterance'));
-			if (allUtterances.length === 0) return;
+function updatePlayerForTime(startTimeParam, endTimeParam) {
+    setTimeout(() => {
+        const allUtterances = Array.from(document.querySelectorAll('.utterance'));
+        if (allUtterances.length === 0) return;
 
-			const targetStartTime = parseFloat(startTimeParam);
-			const targetEndTime = parseFloat(endTimeParam);
+        const targetStartTime = parseFloat(startTimeParam);
+        const targetEndTime = parseFloat(endTimeParam);
 
-			const startSpan = allUtterances.slice().reverse().find(s => parseFloat(s.dataset.startTime) <= targetStartTime);
+        const startSpan = allUtterances.slice().reverse().find(s => parseFloat(s.dataset.startTime) <= targetStartTime);
 
-			if (startSpan) {
-				const startSpanIndex = allUtterances.findIndex(s => s === startSpan);
-				let endSpan;
+        if (startSpan) {
+            const startSpanIndex = allUtterances.findIndex(s => s === startSpan);
+            let endSpan;
 
-				const nextSpanIndex = allUtterances.findIndex((s, index) => index >= startSpanIndex && parseFloat(s.dataset.startTime) > targetEndTime);
+            const nextSpanIndex = allUtterances.findIndex((s, index) => index >= startSpanIndex && parseFloat(s.dataset.startTime) > targetEndTime);
 
-				if (nextSpanIndex !== -1) {
-					endSpan = allUtterances[nextSpanIndex - 1];
-					selectionEndTime = parseFloat(allUtterances[nextSpanIndex].dataset.startTime);
-				} else {
-					endSpan = allUtterances[allUtterances.length - 1];
-					selectionEndTime = videoElement.duration; 
-				}
+            if (nextSpanIndex !== -1) {
+                endSpan = allUtterances[nextSpanIndex - 1];
+                selectionEndTime = parseFloat(allUtterances[nextSpanIndex].dataset.startTime);
+            } else {
+                endSpan = allUtterances[allUtterances.length - 1];
+                selectionEndTime = videoElement.duration;
+            }
 
-				  if (endSpan) {
-					  selectionStartTime = parseFloat(startSpan.dataset.startTime);
-					  const nextSpanAfterEnd = allUtterances[allUtterances.findIndex(s => s === endSpan) + 1];
-					  if (nextSpanAfterEnd) {
-						  selectionEndTime = parseFloat(nextSpanAfterEnd.dataset.startTime);
-						  } else {
-						  selectionEndTime = videoElement.duration;
-						  }
-					  const timeRangeDisplay = document.getElementById('time-range');
-					  const playClipButton = document.getElementById('play-clip-button');
-					  timeRangeDisplay.textContent = `Clip: ${formatTime(selectionStartTime)} - ${formatTime(selectionEndTime)}`;
-					  playClipButton.disabled = false;
-					  videoElement.currentTime = selectionStartTime;
-					  const newRange = document.createRange();
-					  newRange.setStart(startSpan.firstChild, 0);
-					  newRange.setEnd(endSpan.lastChild, endSpan.lastChild.length);
-					  window.getSelection().removeAllRanges();
-					  window.getSelection().addRange(newRange);
-					  startSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				  }
-			}
-		}, 500);
+            if (endSpan) {
+                selectionStartTime = parseFloat(startSpan.dataset.startTime);
+                const nextSpanAfterEnd = allUtterances[allUtterances.findIndex(s => s === endSpan) + 1];
+                if (nextSpanAfterEnd) {
+                    selectionEndTime = parseFloat(nextSpanAfterEnd.dataset.startTime);
+                } else {
+                    selectionEndTime = videoElement.duration;
+                }
+                const timeRangeDisplay = document.getElementById('time-range');
+                const playClipButton = document.getElementById('play-clip-button');
+                timeRangeDisplay.textContent = `Clip: ${formatTime(selectionStartTime)} - ${formatTime(selectionEndTime)}`;
+                playClipButton.disabled = false;
+                videoElement.currentTime = selectionStartTime;
+                const newRange = document.createRange();
+                newRange.setStart(startSpan.firstChild, 0);
+                newRange.setEnd(endSpan.lastChild, endSpan.lastChild.length);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(newRange);
+                startSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, 500);
 }
 function updatePlayerForRange(range) {
-	//const video = document.getElementById('videoElement');
-	const video = window.activeVideoPlayer;
+    //const video = document.getElementById('videoElement');
+    const video = window.activeVideoPlayer;
 
-	const timeRangeDisplay = document.getElementById('time-range');
-	const playClipButton = document.getElementById('play-clip-button');
+    const timeRangeDisplay = document.getElementById('time-range');
+    const playClipButton = document.getElementById('play-clip-button');
 
-	let startSpan = range.startContainer.parentElement.closest('.utterance');
-	let endSpan = range.endContainer.parentElement.closest('.utterance');
+    let startSpan = range.startContainer.parentElement.closest('.utterance');
+    let endSpan = range.endContainer.parentElement.closest('.utterance');
 
-	// --- Find the TRUE start of the selection ---
-	if (!startSpan) {
-		const startElement = range.startContainer.parentElement;
-		const parentP = startElement.closest('p');
-		if (parentP) {
-			// The selection started on a speaker name. The intended start is the
-			// first utterance that follows the speaker name within the same <p>.
-			startSpan = parentP.querySelector('.utterance');
-		}
-	}
+    // --- Find the TRUE start of the selection ---
+    if (!startSpan) {
+        const startElement = range.startContainer.parentElement;
+        const parentP = startElement.closest('p');
+        if (parentP) {
+            // The selection started on a speaker name. The intended start is the
+            // first utterance that follows the speaker name within the same <p>.
+            startSpan = parentP.querySelector('.utterance');
+        }
+    }
 
-	// --- Find the TRUE end of the selection ---
-	if (!endSpan) {
-		const endElement = range.endContainer.parentElement;
-		const parentP = endElement.closest('p');
-		if (parentP) {
-			// The selection ended on a speaker name. The intended end is the
-			// LAST utterance within that same speaker's block.
-			const utterancesInBlock = parentP.querySelectorAll('.utterance');
-			if (utterancesInBlock.length > 0) {
-				endSpan = utterancesInBlock[utterancesInBlock.length - 1];
-			}
-		}
-	}
-	
-	// If the selection ends at the very beginning of the next span,
-	// the user almost certainly meant to select up to the end of the previous one.
-	if (range.endOffset === 0 && endSpan && endSpan.previousElementSibling) {
-		const prevSibling = endSpan.previousElementSibling;
-		if (prevSibling && prevSibling.matches('.utterance')) {
-			 endSpan = prevSibling;
-		}
-	}
+    // --- Find the TRUE end of the selection ---
+    if (!endSpan) {
+        const endElement = range.endContainer.parentElement;
+        const parentP = endElement.closest('p');
+        if (parentP) {
+            // The selection ended on a speaker name. The intended end is the
+            // LAST utterance within that same speaker's block.
+            const utterancesInBlock = parentP.querySelectorAll('.utterance');
+            if (utterancesInBlock.length > 0) {
+                endSpan = utterancesInBlock[utterancesInBlock.length - 1];
+            }
+        }
+    }
 
-	if (startSpan && endSpan) {
-		selectionStartTime = parseFloat(startSpan.dataset.startTime);
+    // If the selection ends at the very beginning of the next span,
+    // the user almost certainly meant to select up to the end of the previous one.
+    if (range.endOffset === 0 && endSpan && endSpan.previousElementSibling) {
+        const prevSibling = endSpan.previousElementSibling;
+        if (prevSibling && prevSibling.matches('.utterance')) {
+            endSpan = prevSibling;
+        }
+    }
 
-		const allUtterances = Array.from(document.querySelectorAll('.utterance'));
-		const endSpanIndex = allUtterances.findIndex(span => span === endSpan);
-		
-		if (endSpanIndex !== -1 && endSpanIndex + 1 < allUtterances.length) {
-			const nextSpan = allUtterances[endSpanIndex + 1];
-			selectionEndTime = parseFloat(nextSpan.dataset.startTime);
-		} else {
-			selectionEndTime = parseFloat(endSpan.dataset.endTime) || video.duration;
-		}
+    if (startSpan && endSpan) {
+        selectionStartTime = parseFloat(startSpan.dataset.startTime);
 
-		video.currentTime = selectionStartTime;
-		timeRangeDisplay.textContent = `Clip: ${formatTime(selectionStartTime)} - ${formatTime(selectionEndTime)}`;
-		playClipButton.disabled = false;
+        const allUtterances = Array.from(document.querySelectorAll('.utterance'));
+        const endSpanIndex = allUtterances.findIndex(span => span === endSpan);
 
-		const newRange = document.createRange();
-		newRange.setStart(startSpan.firstChild, 0);
-		newRange.setEnd(endSpan.lastChild, endSpan.lastChild.length);
-		const selection = window.getSelection();
-		selection.removeAllRanges();
-		selection.addRange(newRange);
-	}
+        if (endSpanIndex !== -1 && endSpanIndex + 1 < allUtterances.length) {
+            const nextSpan = allUtterances[endSpanIndex + 1];
+            selectionEndTime = parseFloat(nextSpan.dataset.startTime);
+        } else {
+            selectionEndTime = parseFloat(endSpan.dataset.endTime) || video.duration;
+        }
+
+        video.currentTime = selectionStartTime;
+        timeRangeDisplay.textContent = `Clip: ${formatTime(selectionStartTime)} - ${formatTime(selectionEndTime)}`;
+        playClipButton.disabled = false;
+
+        const newRange = document.createRange();
+        newRange.setStart(startSpan.firstChild, 0);
+        newRange.setEnd(endSpan.lastChild, endSpan.lastChild.length);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+    }
 }
 
 
@@ -262,69 +262,69 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initialization ---
     window.scrollTo(0, 0);
     buildMenusAndPlayer();
-    loadNavigationModule(); 
-    
-	const videoUrl = meetingData.video_url;
-	const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+    loadNavigationModule();
 
-	// Utility to extract the YouTube video ID
-	function extractYouTubeId(url) {
-		const match = url.match(/[?&]v=([^&]+)|youtu\.be\/([^?&]+)/);
-		return match ? (match[1] || match[2]) : null;
-	}
+    const videoUrl = meetingData.video_url;
+    const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
 
-	if (isYouTube) {
-		// --- YOUTUBE MODE (adds player dynamically) ---
-		const videoId = extractYouTubeId(videoUrl);
-		const videoContainer = document.getElementById('video-player-container');
-		document.body.classList.add('youtube-player-active');
+    // Utility to extract the YouTube video ID
+    function extractYouTubeId(url) {
+        const match = url.match(/[?&]v=([^&]+)|youtu\.be\/([^?&]+)/);
+        return match ? (match[1] || match[2]) : null;
+    }
 
-		const wrapper = document.getElementById('player-wrapper');
-		if (wrapper) {
-			wrapper.innerHTML = '<div id="playerContainer"></div>';
-		} else {
-			videoContainer.innerHTML = '<div id="playerContainer"></div>'; // fallback if wrapper missing
-		}
+    if (isYouTube) {
+        // --- YOUTUBE MODE (adds player dynamically) ---
+        const videoId = extractYouTubeId(videoUrl);
+        const videoContainer = document.getElementById('video-player-container');
+        document.body.classList.add('youtube-player-active');
 
-		const initYouTubePlayer = () => {
-		const ytPlayer = new VideoPlay(videoId, 'playerContainer');
+        const wrapper = document.getElementById('player-wrapper');
+        if (wrapper) {
+            wrapper.innerHTML = '<div id="playerContainer"></div>';
+        } else {
+            videoContainer.innerHTML = '<div id="playerContainer"></div>'; // fallback if wrapper missing
+        }
 
-		// Wait until the player is fully ready
-		ytPlayer.addEventListener('ready', () => {
-			window.activeVideoPlayer = ytPlayer;   // ✅ fallback reference
-			setupInteractiveTranscript(ytPlayer);
-		});
-};
+        const initYouTubePlayer = () => {
+            const ytPlayer = new VideoPlay(videoId, 'playerContainer');
 
-
-		// Load /youtubePlayer.js if needed
-		if (typeof window.VideoPlay === 'undefined') {
-			const script = document.createElement('script');
-			script.src = '/youtubePlayer.js';
-			document.head.appendChild(script);
-			script.onload = initYouTubePlayer;
-		} else {
-			initYouTubePlayer();
-		}
-
-	} else {
-		// --- NON-YOUTUBE MODE (exactly as before) ---
-		// Use the <video id="videoElement"> that already exists in the static HTML
-		const videoElement = document.getElementById('videoElement');
-		if (videoElement) {
-			window.activeVideoPlayer = videoElement;  // ✅ fallback reference
-			setupHlsPlayer(videoElement, videoUrl);
-			setupInteractiveTranscript(videoElement);
-		}
-}
+            // Wait until the player is fully ready
+            ytPlayer.addEventListener('ready', () => {
+                window.activeVideoPlayer = ytPlayer;   // ✅ fallback reference
+                setupInteractiveTranscript(ytPlayer);
+            });
+        };
 
 
-    
+        // Load /youtubePlayer.js if needed
+        if (typeof window.VideoPlay === 'undefined') {
+            const script = document.createElement('script');
+            script.src = '/youtubePlayer.js';
+            document.head.appendChild(script);
+            script.onload = initYouTubePlayer;
+        } else {
+            initYouTubePlayer();
+        }
+
+    } else {
+        // --- NON-YOUTUBE MODE (exactly as before) ---
+        // Use the <video id="videoElement"> that already exists in the static HTML
+        const videoElement = document.getElementById('videoElement');
+        if (videoElement) {
+            window.activeVideoPlayer = videoElement;  // ✅ fallback reference
+            setupHlsPlayer(videoElement, videoUrl);
+            setupInteractiveTranscript(videoElement);
+        }
+    }
+
+
+
     setupMenuAndModalListeners();
     handleUrlParameters();
 
     // --- Helper Functions ---
- 
+
 
     function setupHlsPlayer(videoElement, videoUrl) {
         if (Hls.isSupported()) {
@@ -355,17 +355,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupPrintableView() {
         // This function is called ONLY in the new "printable" tab.
-        
+
         // 1. Hide all the interactive UI elements.
         const elementsToHide = ['#viewer-menu', '#video-pane', '#agenda'];
         elementsToHide.forEach(selector => {
             const el = document.querySelector(selector);
             if (el) el.style.display = 'none';
         });
-        
+
         // 2. Make the transcript pane take up the full width.
         const transcriptPane = document.getElementById('transcript-pane');
-        if(transcriptPane) transcriptPane.style.width = '100%';
+        if (transcriptPane) transcriptPane.style.width = '100%';
 
         // 3. Create and add a prominent "Print" button.
         const printButton = document.createElement('button');
@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         `;
         menuContainer.innerHTML = menuHTML;
-        
+
         const playIconSVG = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
         const pauseIconSVG = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
         const restartIconSVG = '<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>';
@@ -411,37 +411,37 @@ document.addEventListener('DOMContentLoaded', () => {
         setupDropdownMenus(); // Activate the dropdowns
     }
 
-	function loadNavigationModule() {
-	  // --- 1️⃣ Load tour assets first (unconditionally) ---
-	  const css = document.createElement('link');
-	  css.rel = 'stylesheet';
-	  css.href = '/tour.css';
-	  document.head.appendChild(css);
+    function loadNavigationModule() {
+        // --- 1️⃣ Load tour assets first (unconditionally) ---
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = '/tour.css';
+        document.head.appendChild(css);
 
-	  const tourScript = document.createElement('script');
-	  tourScript.src = '/tour.js';
-	  tourScript.defer = true;
+        const tourScript = document.createElement('script');
+        tourScript.src = '/tour.js';
+        tourScript.defer = true;
 
-	  tourScript.onload = () => {
-		console.log('Tour module ready.');
+        tourScript.onload = () => {
+            console.log('Tour module ready.');
 
-		// --- 2️⃣ Then load navigation.js ---
-		const navScript = document.createElement('script');
-		navScript.src = '/navigation.js';
-		navScript.defer = true;
-		navScript.onload = () => {
-		  if (typeof initializeNavigationPane === 'function') {
-			initializeNavigationPane();
-		  } else {
-			console.error('Navigation module failed to define initializeNavigationPane function.');
-		  }
-		};
-		document.body.appendChild(navScript);
-	  };
+            // --- 2️⃣ Then load navigation.js ---
+            const navScript = document.createElement('script');
+            navScript.src = '/navigation.js';
+            navScript.defer = true;
+            navScript.onload = () => {
+                if (typeof initializeNavigationPane === 'function') {
+                    initializeNavigationPane();
+                } else {
+                    console.error('Navigation module failed to define initializeNavigationPane function.');
+                }
+            };
+            document.body.appendChild(navScript);
+        };
 
-	  tourScript.onerror = () => console.error('Failed to load /tour.js');
-	  document.body.appendChild(tourScript);
-	}
+        tourScript.onerror = () => console.error('Failed to load /tour.js');
+        document.body.appendChild(tourScript);
+    }
 
 
     function buildShareButtons() {
@@ -473,18 +473,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const shareButton = document.getElementById('share-button');
         //const aboutButton = document.getElementById('about-button');
 
-        
+
         closeModalButtons.forEach(btn => btn.addEventListener('click', () => {
             shareModal.style.display = 'none';
             const aboutModal = document.getElementById('about-modal');
-            if(aboutModal) aboutModal.style.display = 'none';
+            if (aboutModal) aboutModal.style.display = 'none';
         }));
 
         if (shareButtons) {
             shareButtons.addEventListener('click', handleShare);
         }
 
- 
+
 
         printButton.addEventListener('click', () => {
             const currentUrl = new URL(window.location.href);
@@ -512,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.tagName === 'A') {
                 e.preventDefault();
                 //const video = document.getElementById('videoElement');
-				const video = window.activeVideoPlayer;
+                const video = window.activeVideoPlayer;
                 const allUtterances = Array.from(document.querySelectorAll('.utterance'));
                 if (allUtterances.length === 0) return;
 
@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!startSpan && allUtterances.length > 0) {
                     startSpan = allUtterances[0];
                 }
-                
+
                 if (startSpan) {
                     const startSpanIndex = allUtterances.findIndex(s => s === startSpan);
                     let endSpan;
@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const shareClipOptions = document.getElementById('share-clip-options');
         const shareClipCheckbox = document.getElementById('share-clip-checkbox');
         const shareTimeRange = document.getElementById('share-time-range');
-        
+
         if (isClip) {
             shareClipOptions.style.display = 'block';
             shareClipCheckbox.checked = true;
@@ -593,9 +593,9 @@ document.addEventListener('DOMContentLoaded', () => {
             shareClipOptions.style.display = 'none';
             shareClipCheckbox.checked = false;
         }
-        shareModal.style.display = 'block';
+        shareModal.style.display = 'flex';
     }
-    
+
 
 
     function handleShare(e) {
@@ -607,17 +607,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let url = window.location.href.split('?')[0];
         const subject = document.title;
-        
+
         if (document.getElementById('share-clip-checkbox').checked) {
             url += `?startTime=${selectionStartTime}&endTime=${selectionEndTime}`;
         }
 
         const targetUrl = shareTargets[site].action(url, subject, button);
-        
+
         if (targetUrl) {
             window.open(targetUrl, '_blank');
         }
-        
+
         // Don't close the modal immediately for the copy action
         if (site !== 'copy') {
             document.getElementById('share-modal').style.display = 'none';
@@ -639,8 +639,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 100);
         } else if (startTimeParam && endTimeParam) {
-            updatePlayerForTime(startTimeParam,endTimeParam);
-		}
+            updatePlayerForTime(startTimeParam, endTimeParam);
+        }
     }
 
     function setupInteractiveTranscript(video) {
@@ -678,7 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 video.pause();
             }
         });
-        
+
         playFullVideoButton.addEventListener('click', () => {
             const allUtterances = document.querySelectorAll('.utterance');
             if (allUtterances.length > 0) {
@@ -688,18 +688,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newRange = document.createRange();
                 newRange.setStart(firstUtterance.firstChild, 0);
                 newRange.setEnd(lastUtterance.lastChild, lastUtterance.lastChild.length);
-                
+
                 const selection = window.getSelection();
                 selection.removeAllRanges();
                 selection.addRange(newRange);
                 updatePlayerForRange(newRange);
-                
+
                 playClipButton.click();
             }
         });
-		const END_TOLERANCE = 1.00; // seconds - kluge for drift
+        const END_TOLERANCE = 1.00; // seconds - kluge for drift
         video.addEventListener('timeupdate', () => {
-            if (clipPlaying && video.currentTime >= (selectionEndTime+END_TOLERANCE)) {
+            if (clipPlaying && video.currentTime >= (selectionEndTime + END_TOLERANCE)) {
                 video.pause();
             }
         });
@@ -718,5 +718,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    
+
 });
