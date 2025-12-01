@@ -76,7 +76,60 @@ async function discoverMeetingsS3(indexUrl) {
     if (Array.isArray(data)) {
         return buildHierarchyFromPaths(data);
     }
-    return data;
+    // It's the nested object format from sync_meetings.py
+    return convertS3IndexToHierarchy(data);
+}
+
+function convertS3IndexToHierarchy(data) {
+    const root = { name: "root", type: "folder", children: {} };
+
+    for (const [committeeName, subcommittees] of Object.entries(data)) {
+        // Create committee folder
+        if (!root.children[committeeName]) {
+            root.children[committeeName] = {
+                name: committeeName,
+                type: "folder",
+                children: {}
+            };
+        }
+        const committeeNode = root.children[committeeName];
+
+        for (const [subcommitteeName, meetings] of Object.entries(subcommittees)) {
+            // Create subcommittee folder
+            // If subcommittee is "Full_Board", maybe we want to flatten it or keep it?
+            // The viewer expects a hierarchy. Let's keep it for now.
+            if (!committeeNode.children[subcommitteeName]) {
+                committeeNode.children[subcommitteeName] = {
+                    name: subcommitteeName,
+                    type: "folder",
+                    children: {}
+                };
+            }
+            const subcommitteeNode = committeeNode.children[subcommitteeName];
+
+            // Add meetings
+            if (Array.isArray(meetings)) {
+                meetings.forEach(meeting => {
+                    // meeting is { name: "2024-01-01", path: "..." }
+                    // Ensure path starts with /
+                    let linkPath = meeting.path;
+                    if (!linkPath.startsWith('/')) {
+                        linkPath = '/' + linkPath;
+                    }
+
+                    // The viewer expects the meeting node to be a child with isMeeting=true
+                    subcommitteeNode.children[meeting.name] = {
+                        name: meeting.name,
+                        type: "file", // or folder? buildHierarchy uses folder but sets isMeeting=true
+                        isMeeting: true,
+                        linkPath: linkPath,
+                        children: {} // Meetings don't have children in this view
+                    };
+                });
+            }
+        }
+    }
+    return root;
 }
 
 function buildHierarchyFromPaths(paths) {
@@ -125,6 +178,11 @@ function renderDirectory(rootNode, container, linkHrefGenerator, onLinkClick, ac
 
     const sortChildren = (children) => {
         return Object.values(children).sort((a, b) => {
+            if (a.isMeeting && b.isMeeting) {
+                // Descending for meetings (newest first)
+                return b.name.localeCompare(a.name);
+            }
+            // Ascending for folders/committees
             return a.name.localeCompare(b.name);
         });
     };
@@ -238,24 +296,32 @@ function renderDirectory(rootNode, container, linkHrefGenerator, onLinkClick, ac
 }
 
 function saveDirectoryState() {
-    const state = {};
-    document.querySelectorAll('.toc-folder').forEach((folder, index) => {
-        const toggle = folder.querySelector('.toc-toggle');
-        if (toggle && toggle.classList.contains('open')) {
-            state[index] = true;
-        }
-    });
-    localStorage.setItem('directoryState', JSON.stringify(state));
+    try {
+        const state = {};
+        document.querySelectorAll('.toc-folder').forEach((folder, index) => {
+            const toggle = folder.querySelector('.toc-toggle');
+            if (toggle && toggle.classList.contains('open')) {
+                state[index] = true;
+            }
+        });
+        localStorage.setItem('directoryState', JSON.stringify(state));
+    } catch (e) {
+        // Ignore write errors
+    }
 }
 
 function restoreDirectoryState() {
-    const state = JSON.parse(localStorage.getItem('directoryState')) || {};
-    document.querySelectorAll('.toc-folder').forEach((folder, index) => {
-        if (state[index]) {
-            const toggle = folder.querySelector('.toc-toggle');
-            const nested = folder.querySelector('.nested');
-            if (toggle) toggle.classList.add('open');
-            if (nested) nested.classList.add('active');
-        }
-    });
+    try {
+        const state = JSON.parse(localStorage.getItem('directoryState')) || {};
+        document.querySelectorAll('.toc-folder').forEach((folder, index) => {
+            if (state[index]) {
+                const toggle = folder.querySelector('.toc-toggle');
+                const nested = folder.querySelector('.nested');
+                if (toggle) toggle.classList.add('open');
+                if (nested) nested.classList.add('active');
+            }
+        });
+    } catch (e) {
+        console.warn('Failed to restore directory state:', e);
+    }
 }

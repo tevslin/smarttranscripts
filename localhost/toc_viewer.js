@@ -34,8 +34,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Pinning Logic ---
     // Default to pinned (true) if not set
-    let savedState = localStorage.getItem('tocPinned');
+    let savedState = null;
+    try {
+        savedState = localStorage.getItem('tocPinned');
+    } catch (e) {
+        console.warn('localStorage not accessible:', e);
+    }
     let isPinned = savedState === null ? true : savedState === 'true';
+
+    // Check if we are on index.html or root
+    const isIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+
+    if (isIndexPage) {
+        isPinned = true;
+    }
 
     function updatePinState() {
         if (isPinned) {
@@ -54,10 +66,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 pinButton.title = "Pin ToC";
             }
         }
-        localStorage.setItem('tocPinned', isPinned);
+
+        // Only save state if NOT on index page, to avoid overwriting user preference with forced state
+        if (!isIndexPage) {
+            try {
+                localStorage.setItem('tocPinned', isPinned);
+            } catch (e) {
+                // Ignore write errors
+            }
+        }
     }
 
     if (pinButton) {
+        if (isIndexPage) {
+            pinButton.style.display = 'none';
+        }
+
         pinButton.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent bubbling
             isPinned = !isPinned;
@@ -119,13 +143,21 @@ document.addEventListener('DOMContentLoaded', () => {
             isResizing = false;
             document.body.style.cursor = '';
             document.body.classList.remove('no-select');
-            localStorage.setItem('tocWidth', tocPane.style.width);
+            try {
+                localStorage.setItem('tocWidth', tocPane.style.width);
+            } catch (e) {
+                // Ignore
+            }
         }
     });
 
     // Restore width
-    const savedWidth = localStorage.getItem('tocWidth');
-    if (savedWidth) {
-        tocPane.style.width = savedWidth;
+    try {
+        const savedWidth = localStorage.getItem('tocWidth');
+        if (savedWidth) {
+            tocPane.style.width = savedWidth;
+        }
+    } catch (e) {
+        // Ignore
     }
 });

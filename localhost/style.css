@@ -712,3 +712,68 @@ header h1 {
 body.youtube-player-active #player-wrapper {
     padding-top: 0;
 }
+
+/* --- Print Styles --- */
+@media print {
+
+    /* Hide all non-essential elements */
+    #toc-pane,
+    #left-pane,
+    #video-pane,
+    #player-controls,
+    #viewer-menu,
+    header,
+    .modal,
+    #share-buttons,
+    #time-range,
+    #toc-resize-handle,
+    .nav-header,
+    .nav-tabs,
+    .nav-tab-content {
+        display: none !important;
+    }
+
+    /* Reset layout for print */
+    body,
+    #main-content,
+    #content-container,
+    #transcript-pane,
+    #transcript-container,
+    #text-container {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: static !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+    }
+
+    /* Ensure text is readable */
+    #text-container {
+        font-size: 12pt;
+        line-height: 1.5;
+        color: black;
+        padding: 20px !important;
+    }
+
+    /* Ensure speakers are bold */
+    strong {
+        font-weight: bold !important;
+        color: black !important;
+    }
+
+    /* Ensure links are underlined but black */
+    a {
+        text-decoration: underline;
+        color: black !important;
+    }
+
+    /* Hide scrollbars */
+    ::-webkit-scrollbar {
+        display: none;
+    }
+}

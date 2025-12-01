@@ -5,6 +5,7 @@ import mimetypes
 import time
 import hashlib
 import argparse
+import shutil
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
@@ -82,41 +83,12 @@ def invalidate_cloudfront_cache(distribution_id, items):
     except ClientError as e:
         print(f"Error creating invalidation: {e}")
 
-def main():
-    """
-    Uploads website framework files to the S3 bucket, skipping unchanged files.
-    Accepts command-line arguments for manifest path and source directory.
-    """
-    parser = argparse.ArgumentParser(description="Uploads website framework files to S3 and invalidates CloudFront cache.")
-    parser.add_argument(
-        '--manifest-path',
-        default=os.path.join(SCRIPT_DIR,"sync_manifest.txt"),
-        help='Path to the manifest file listing files to sync. Defaults to sync_manifest.txt in the script directory.'
-    )
-    parser.add_argument(
-        '--source-dir',
-        default=os.path.join(SCRIPT_DIR,"localhost"),
-        help='Path to the source directory containing the files. Defaults to localhost in the script directory.'
-    )
-    args = parser.parse_args()
-
-    print("--- Starting Website Framework Upload ---")
-    
-    manifest_path = os.path.abspath(args.manifest_path)
-    source_dir = os.path.abspath(args.source_dir)
-
-    try:
-        with open(manifest_path, 'r') as f:
-            files_to_sync = [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        print(f"{YELLOW}Error: Manifest file not found at {manifest_path}{RESET}")
-        return
-
-    print(f"Found {len(files_to_sync)} files to sync from manifest: {manifest_path}")
-    print(f"Using source directory: {source_dir}")
+def sync_to_s3(source_dir, bucket_name, files_to_sync):
+    """Syncs files from source_dir to an S3 bucket."""
+    print(f"Syncing to S3 Bucket: {bucket_name}")
     
     s3 = boto3.client("s3", region_name=AWS_REGION)
-    s3_objects = get_s3_objects(BUCKET_NAME)
+    s3_objects = get_s3_objects(bucket_name)
     uploaded_files = []
 
     for file_key in files_to_sync:
@@ -140,7 +112,7 @@ def main():
         try:
             s3.upload_file(
                 local_path,
-                BUCKET_NAME,
+                bucket_name,
                 file_key,
                 ExtraArgs={'ContentType': content_type}
             )
@@ -151,12 +123,118 @@ def main():
 
     # Invalidate the cache for the uploaded files
     if uploaded_files:
-        dist_id = find_distribution_id_for_bucket(BUCKET_NAME)
+        dist_id = find_distribution_id_for_bucket(bucket_name)
         invalidate_cloudfront_cache(dist_id, uploaded_files)
     else:
         print("No files were uploaded, skipping invalidation.")
 
-    print("--- Framework Upload Complete ---")
+def sync_to_directory(source_dir, target_dir, files_to_sync):
+    """Syncs files from source_dir to a local target directory."""
+    print(f"Syncing to Local Directory: {target_dir}")
+    
+    if not os.path.exists(target_dir):
+        try:
+            os.makedirs(target_dir)
+            print(f"Created target directory: {target_dir}")
+        except OSError as e:
+            print(f"Error creating target directory: {e}")
+            return
+
+    copied_count = 0
+    for file_key in files_to_sync:
+        local_path = os.path.join(source_dir, file_key)
+        target_path = os.path.join(target_dir, file_key)
+        
+        if not os.path.exists(local_path):
+            print(f"{YELLOW}Warning: File '{local_path}' not found, skipping.{RESET}")
+            continue
+
+        # Check if target exists and compare content (using MD5 for consistency)
+        should_copy = True
+        if os.path.exists(target_path):
+            local_md5 = calculate_local_md5(local_path)
+            target_md5 = calculate_local_md5(target_path)
+            if local_md5 == target_md5:
+                should_copy = False
+                print(f"{CYAN}Skipping '{file_key}' (unchanged).{RESET}")
+
+        if should_copy:
+            try:
+                # Ensure subdirectories exist in target
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                shutil.copy2(local_path, target_path)
+                print(f"{GREEN}Copying '{file_key}' to '{target_path}'...{RESET}")
+                copied_count += 1
+            except OSError as e:
+                print(f"Error copying '{file_key}': {e}")
+
+    print(f"--- Local Sync Complete. Copied {copied_count} files. ---")
+
+def main():
+    """
+    Uploads website framework files to a target (S3 bucket or local directory).
+    """
+    parser = argparse.ArgumentParser(description="Syncs website framework files to S3 or a local directory.")
+    parser.add_argument(
+        '--target',
+        required=True,
+        help='Target destination. Can be an S3 bucket name or a local directory path.'
+    )
+    parser.add_argument(
+        '--manifest-path',
+        help='Path to the manifest file listing files to sync. Defaults to sync_manifest.txt in the source directory.'
+    )
+    parser.add_argument(
+        '--source-dir',
+        default=os.path.join(SCRIPT_DIR, "localhost"),
+        help='Path to the source directory containing the files. Defaults to localhost in the script directory.'
+    )
+    args = parser.parse_args()
+
+    print("--- Starting Framework Sync ---")
+    
+    source_dir = os.path.abspath(args.source_dir)
+    
+    # Determine manifest path
+    if args.manifest_path:
+        manifest_path = os.path.abspath(args.manifest_path)
+    else:
+        manifest_path = os.path.join(source_dir, "sync_manifest.txt")
+        # Fallback to script dir if not found in source (for backward compatibility or mixed setups)
+        if not os.path.exists(manifest_path):
+             fallback_path = os.path.join(SCRIPT_DIR, "sync_manifest.txt")
+             if os.path.exists(fallback_path):
+                 manifest_path = fallback_path
+
+    try:
+        with open(manifest_path, 'r') as f:
+            files_to_sync = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        print(f"{YELLOW}Error: Manifest file not found at {manifest_path}{RESET}")
+        return
+
+    print(f"Found {len(files_to_sync)} files to sync from manifest: {manifest_path}")
+    print(f"Using source directory: {source_dir}")
+    
+    # Determine target type
+    target = args.target
+    if os.path.isdir(target) or os.path.exists(target): 
+        # If it exists and is a dir, or doesn't exist but looks like a path (we'll assume dir creation is intended if it looks like a path? 
+        # Actually, user said "if it is not already... assumed... source directory". 
+        # Let's stick to the plan: if os.path.isdir(target) -> directory. Else -> S3.
+        # But what if they want to create a NEW directory? 
+        # Let's check if it *looks* like a path (contains separators) or if it exists as a dir.
+        if os.path.isdir(target) or "\\" in target or "/" in target:
+             sync_to_directory(source_dir, os.path.abspath(target), files_to_sync)
+        else:
+             sync_to_s3(source_dir, target, files_to_sync)
+    else:
+        # If it doesn't exist, and has no separators, assume S3 bucket.
+        # If it has separators, assume it's a new directory path.
+        if "\\" in target or "/" in target:
+             sync_to_directory(source_dir, os.path.abspath(target), files_to_sync)
+        else:
+             sync_to_s3(source_dir, target, files_to_sync)
 
 if __name__ == "__main__":
     main()

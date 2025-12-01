@@ -168,11 +168,8 @@ function updatePlayerForRange(range) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('printable')) {
-        setupPrintableView();
-        return;
-    }
+    // Removed printable param check
+
 
     console.log("Viewer logic initialized.");
 
@@ -353,29 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.trim();
     }
 
-    function setupPrintableView() {
-        // This function is called ONLY in the new "printable" tab.
+    // setupPrintableView removed
 
-        // 1. Hide all the interactive UI elements.
-        const elementsToHide = ['#viewer-menu', '#video-pane', '#agenda'];
-        elementsToHide.forEach(selector => {
-            const el = document.querySelector(selector);
-            if (el) el.style.display = 'none';
-        });
-
-        // 2. Make the transcript pane take up the full width.
-        const transcriptPane = document.getElementById('transcript-pane');
-        if (transcriptPane) transcriptPane.style.width = '100%';
-
-        // 3. Create and add a prominent "Print" button.
-        const printButton = document.createElement('button');
-        printButton.textContent = 'Print Transcript';
-        printButton.style.margin = '1rem';
-        printButton.style.padding = '1rem';
-        printButton.style.fontSize = '1.5rem';
-        printButton.onclick = () => window.print();
-        document.body.insertBefore(printButton, document.getElementById('main-content'));
-    }
 
     // --- UI Building ---
     function buildMenusAndPlayer() {
@@ -487,9 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         printButton.addEventListener('click', () => {
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('printable', 'true');
-            window.open(currentUrl.href, '_blank');
+            window.print();
         });
 
         saveButton.addEventListener('click', () => {

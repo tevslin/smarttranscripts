@@ -26,33 +26,38 @@ function loadChoicesLibrary() {
 }
 
 function runTour(forceRun = false) {
-  const skipFlag = localStorage.getItem('smartTourSkip') === '1';
+  let skipFlag = false;
+  try {
+    skipFlag = localStorage.getItem('smartTourSkip') === '1';
+  } catch (e) {
+    // Ignore
+  }
   if (!forceRun && skipFlag) {
     console.log('Tour skipped by flag.');
     return;
   }
   startTour(forceRun)
- 
+
 }
 
 
 
 
 function initializeNavigationPane() {
-    const agendaPane = document.getElementById('agenda');
-    if (!agendaPane) {
-        console.error("Original agenda pane not found. Cannot build navigation.");
-        return;
-    }
+  const agendaPane = document.getElementById('agenda');
+  if (!agendaPane) {
+    console.error("Original agenda pane not found. Cannot build navigation.");
+    return;
+  }
 
-    const redundantAgendaTitle = agendaPane.querySelector('h3');
-    if (redundantAgendaTitle) {
-        redundantAgendaTitle.remove();
-    }
+  const redundantAgendaTitle = agendaPane.querySelector('h3');
+  if (redundantAgendaTitle) {
+    redundantAgendaTitle.remove();
+  }
 
-    const navHeader = document.createElement('div');
-    navHeader.className = 'nav-header';
-    navHeader.innerHTML = `
+  const navHeader = document.createElement('div');
+  navHeader.className = 'nav-header';
+  navHeader.innerHTML = `
         <h3>Navigation</h3>
         <div class="nav-tabs">
             <button class="nav-tab-button active" data-mode="agenda">Agenda</button>
@@ -61,124 +66,124 @@ function initializeNavigationPane() {
         </div>
     `;
 
-    const agendaContent = document.createElement('div');
-    agendaContent.className = 'nav-tab-content active';
-    agendaContent.dataset.mode = 'agenda';
-    while(agendaPane.firstChild) {
-        agendaContent.appendChild(agendaPane.firstChild);
-    }
+  const agendaContent = document.createElement('div');
+  agendaContent.className = 'nav-tab-content active';
+  agendaContent.dataset.mode = 'agenda';
+  while (agendaPane.firstChild) {
+    agendaContent.appendChild(agendaPane.firstChild);
+  }
 
-    const textContent = document.createElement('div');
-    textContent.className = 'nav-tab-content';
-    textContent.dataset.mode = 'text';
-    textContent.innerHTML = `
+  const textContent = document.createElement('div');
+  textContent.className = 'nav-tab-content';
+  textContent.dataset.mode = 'text';
+  textContent.innerHTML = `
         <input type="text" id="text-search-input" placeholder="Search transcript...">
         <button id="text-search-button">Search</button>
 		<div class="search-results"></div>
     `;
-	
-	const searchButton = textContent.querySelector("#text-search-button");
-	const textSearchInput=textContent.querySelector("#text-search-input");
-	searchButton.addEventListener("click", (e) => {
-		e.preventDefault();
-		const query = textContent.querySelector("#text-search-input").value.trim();
-		if (!query) return;
-		runSearch(query);   // your existing search function
-	});
-	textSearchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-			const query = textContent.querySelector("#text-search-input").value.trim();
-            if (!query) return;
-			runSearch(query);   // your existing search function
+
+  const searchButton = textContent.querySelector("#text-search-button");
+  const textSearchInput = textContent.querySelector("#text-search-input");
+  searchButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    const query = textContent.querySelector("#text-search-input").value.trim();
+    if (!query) return;
+    runSearch(query);   // your existing search function
+  });
+  textSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const query = textContent.querySelector("#text-search-input").value.trim();
+      if (!query) return;
+      runSearch(query);   // your existing search function
+    }
+  });
+
+  agendaPane.prepend(navHeader);
+  agendaPane.appendChild(agendaContent);
+  agendaPane.appendChild(textContent);
+
+  const navTabs = navHeader.querySelector('.nav-tabs');
+  navTabs.addEventListener('click', (e) => {
+    if (e.target.classList.contains('nav-tab-button')) {
+      const mode = e.target.dataset.mode;
+
+      navTabs.querySelectorAll('.nav-tab-button').forEach(button => button.classList.remove('active'));
+      e.target.classList.add('active');
+
+      agendaPane.querySelectorAll('.nav-tab-content').forEach(content => {
+        if (content.dataset.mode === mode) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
         }
-    });
+      });
+    }
+  });
+  // --- Navigation boot logic: initialize speaker tab, then handle URL params ---
+  (async () => {
+    // Wait for the speaker tab and its Choices.js dependency to be ready
+    await initializeSpeakerTab();
 
-    agendaPane.prepend(navHeader);
-    agendaPane.appendChild(agendaContent);
-    agendaPane.appendChild(textContent);
+    // Parse URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const qParam = urlParams.get('q');
+    const speakerParam = urlParams.get('sp') || urlParams.get('speaker');
 
-    const navTabs = navHeader.querySelector('.nav-tabs');
-    navTabs.addEventListener('click', (e) => {
-        if (e.target.classList.contains('nav-tab-button')) {
-            const mode = e.target.dataset.mode;
-            
-            navTabs.querySelectorAll('.nav-tab-button').forEach(button => button.classList.remove('active'));
-            e.target.classList.add('active');
+    if (qParam) {
+      // --- TEXT MODE SEARCH ---
+      const query = decodeURIComponent(qParam).trim();
 
-            agendaPane.querySelectorAll('.nav-tab-content').forEach(content => {
-                if (content.dataset.mode === mode) {
-                    content.classList.add('active');
-                } else {
-                    content.classList.remove('active');
-                }
-            });
+      // 1️⃣ Activate Text mode
+      const textTabButton = document.querySelector('.nav-tab-button[data-mode="text"]');
+      if (textTabButton) textTabButton.click();
+
+      // 2️⃣ Optionally populate any visible text search input
+      const searchInput = document.querySelector('.search-input, #search-input');
+      if (searchInput) searchInput.value = query;
+
+      // 3️⃣ Run the search
+      if (typeof runSearch === 'function') {
+        runSearch(query, 'text');
+      } else {
+        console.warn('runSearch() not available when handling ?q=');
+      }
+
+    } else if (speakerParam) {
+      // --- SPEAKER MODE SEARCH ---
+      const speakerName = decodeURIComponent(speakerParam).trim();
+
+      // 1️⃣ Switch to Speaker mode
+      const speakerTabButton = document.querySelector('.nav-tab-button[data-mode="speaker"]');
+      if (speakerTabButton) speakerTabButton.click();
+
+      // 2️⃣ Attempt to select the speaker in the dropdown
+      const dropdown = document.getElementById('speaker-dropdown');
+      if (dropdown) {
+        const match = Array.from(dropdown.options).find(opt => opt.value === speakerName);
+        if (match) {
+          dropdown.value = speakerName;
+          dropdown.dispatchEvent(new Event('change', { bubbles: true }));
+        } else if (typeof runSpeakerSearch === 'function') {
+          runSpeakerSearch(speakerName); // fallback diagnostic
         }
-    });
-	// --- Navigation boot logic: initialize speaker tab, then handle URL params ---
-	(async () => {
-	  // Wait for the speaker tab and its Choices.js dependency to be ready
-	  await initializeSpeakerTab();
+      } else {
+        console.warn('Speaker dropdown not found when handling ?speaker=');
+      }
+    }
 
-	  // Parse URL parameters
-	  const urlParams = new URLSearchParams(window.location.search);
-	  const qParam = urlParams.get('q');
-	  const speakerParam = urlParams.get('sp') || urlParams.get('speaker');
-
-	  if (qParam) {
-		// --- TEXT MODE SEARCH ---
-		const query = decodeURIComponent(qParam).trim();
-
-		// 1️⃣ Activate Text mode
-		const textTabButton = document.querySelector('.nav-tab-button[data-mode="text"]');
-		if (textTabButton) textTabButton.click();
-
-		// 2️⃣ Optionally populate any visible text search input
-		const searchInput = document.querySelector('.search-input, #search-input');
-		if (searchInput) searchInput.value = query;
-
-		// 3️⃣ Run the search
-		if (typeof runSearch === 'function') {
-		  runSearch(query, 'text');
-		} else {
-		  console.warn('runSearch() not available when handling ?q=');
-		}
-
-	  } else if (speakerParam) {
-		// --- SPEAKER MODE SEARCH ---
-		const speakerName = decodeURIComponent(speakerParam).trim();
-
-		// 1️⃣ Switch to Speaker mode
-		const speakerTabButton = document.querySelector('.nav-tab-button[data-mode="speaker"]');
-		if (speakerTabButton) speakerTabButton.click();
-
-		// 2️⃣ Attempt to select the speaker in the dropdown
-		const dropdown = document.getElementById('speaker-dropdown');
-		if (dropdown) {
-		  const match = Array.from(dropdown.options).find(opt => opt.value === speakerName);
-		  if (match) {
-			dropdown.value = speakerName;
-			dropdown.dispatchEvent(new Event('change', { bubbles: true }));
-		  } else if (typeof runSpeakerSearch === 'function') {
-			runSpeakerSearch(speakerName); // fallback diagnostic
-		  }
-		} else {
-		  console.warn('Speaker dropdown not found when handling ?speaker=');
-		}
-	  }
-
-	  // No URL params → normal UI flow
-	})();
+    // No URL params → normal UI flow
+  })();
 
 
-// --- Add Help menu (Demo + About + Contact) if viewer_logic has already built menus ---
-(function addHelpMenu() {
-  const menuContainer = document.getElementById('viewer-menu');
-  if (!menuContainer) return; // nothing to do if no menus exist
+  // --- Add Help menu (Demo + About + Contact) if viewer_logic has already built menus ---
+  (function addHelpMenu() {
+    const menuContainer = document.getElementById('viewer-menu');
+    if (!menuContainer) return; // nothing to do if no menus exist
 
-  // --- 1️⃣ Create Help dropdown identical to other menus ---
-  const helpMenu = document.createElement('div');
-  helpMenu.className = 'menu-item';
-  helpMenu.innerHTML = `
+    // --- 1️⃣ Create Help dropdown identical to other menus ---
+    const helpMenu = document.createElement('div');
+    helpMenu.className = 'menu-item';
+    helpMenu.innerHTML = `
     <button>Help</button>
     <ul class="dropdown-menu">
       <li id="demo-button">Tutorial</li>
@@ -187,120 +192,131 @@ function initializeNavigationPane() {
     </ul>
   `;
 
-  // --- 2️⃣ Append it after any existing menus built by viewer_logic.js ---
-  menuContainer.appendChild(helpMenu);
+    // --- 2️⃣ Append it after any existing menus built by viewer_logic.js ---
+    menuContainer.appendChild(helpMenu);
 
-  // --- 3️⃣ Re-run dropdown setup so this menu behaves like the others ---
-  if (typeof setupDropdownMenus === 'function') {
-    setupDropdownMenus();
-  } else {
-    setTimeout(() => {
-      if (typeof setupDropdownMenus === 'function') setupDropdownMenus();
-    }, 500);
-  }
+    // --- 3️⃣ Re-run dropdown setup so this menu behaves like the others ---
+    if (typeof setupDropdownMenus === 'function') {
+      setupDropdownMenus();
+    } else {
+      setTimeout(() => {
+        if (typeof setupDropdownMenus === 'function') setupDropdownMenus();
+      }, 500);
+    }
 
-  // --- Optional Guided Tour Loader ---
-  (function loadGuidedTourIfEligible() {
-    const hasParams = window.location.search.length > 0;
-    const hasSeenTour = localStorage.getItem('smartTourSkip') === '1';
-    document.querySelectorAll('.tour-tip, .tour-backdrop').forEach(el => el.remove());
-    if (hasParams || hasSeenTour) return; // skip for shared links or opted-out users
-    runTour();
+    // --- Optional Guided Tour Loader ---
+    (function loadGuidedTourIfEligible() {
+      const hasParams = window.location.search.length > 0;
+      let hasSeenTour = false;
+      try {
+        hasSeenTour = localStorage.getItem('smartTourSkip') === '1';
+      } catch (e) {
+        // Ignore
+      }
+      document.querySelectorAll('.tour-tip, .tour-backdrop').forEach(el => el.remove());
+      if (hasParams || hasSeenTour) return; // skip for shared links or opted-out users
+      runTour();
+    })();
+
+    // --- 4️⃣ Button handlers ---
+    const demoButton = helpMenu.querySelector('#demo-button');
+    if (demoButton) {
+      demoButton.addEventListener('click', () => {
+        if (typeof runTour === 'function') runTour(true);
+        else console.warn('runTour() is not defined yet.');
+      });
+    }
+
+    const aboutButton = helpMenu.querySelector('#about-button');
+    if (aboutButton) {
+      aboutButton.addEventListener('click', () => showAboutModal());
+    }
+
+    const contactButton = helpMenu.querySelector('#contact-button');
+    if (contactButton) {
+      contactButton.addEventListener('click', () => {
+        window.location.href = 'mailto:contact@goldendomevt.com';
+      });
+    }
   })();
 
-  // --- 4️⃣ Button handlers ---
-  const demoButton = helpMenu.querySelector('#demo-button');
-  if (demoButton) {
-    demoButton.addEventListener('click', () => {
-      if (typeof runTour === 'function') runTour(true);
-      else console.warn('runTour() is not defined yet.');
-    });
-  }
-
-  const aboutButton = helpMenu.querySelector('#about-button');
-  if (aboutButton) {
-    aboutButton.addEventListener('click', () => showAboutModal());
-  }
-
-  const contactButton = helpMenu.querySelector('#contact-button');
-  if (contactButton) {
-    contactButton.addEventListener('click', () => {
-      window.location.href = 'mailto:contact@goldendomevt.com';
-    });
-  }
-})();
 
 
 
+  function showAboutModal() {
+    let aboutModal = document.getElementById('about-modal');
+    if (!aboutModal) {
+      aboutModal = document.createElement('div');
+      aboutModal.id = 'about-modal';
+      aboutModal.className = 'modal';
+      document.body.appendChild(aboutModal);
+    }
 
-function showAboutModal() {
-	let aboutModal = document.getElementById('about-modal');
-	if (!aboutModal) {
-		aboutModal = document.createElement('div');
-		aboutModal.id = 'about-modal';
-		aboutModal.className = 'modal';
-		document.body.appendChild(aboutModal);
-	}
+    fetch('/about.html')
+      .then(response => response.text())
+      .then(html => {
+        // Parse the HTML to extract only the body content
+        // This prevents <style> tags in head from leaking into the main page
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const bodyContent = doc.body.innerHTML;
 
-	fetch('/about.html')
-		.then(response => response.text())
-		.then(html => {
-			aboutModal.innerHTML = `
+        aboutModal.innerHTML = `
 				<div class="modal-content">
-					<div id="about-modal-content">${html}</div>
+					<div id="about-modal-content">${bodyContent}</div>
 					<div class="modal-footer">
 						<button id="about-ok-button">OK</button>
 					</div>
 				</div>
 			`;
-			aboutModal.style.display = 'block';
+        aboutModal.style.display = 'block';
 
-			document.getElementById('about-ok-button').addEventListener('click', () => {
-				aboutModal.style.display = 'none';
-			});
-		})
-		.catch(error => console.error('Error fetching about.html:', error));
-}
+        document.getElementById('about-ok-button').addEventListener('click', () => {
+          aboutModal.style.display = 'none';
+        });
+      })
+      .catch(error => console.error('Error fetching about.html:', error));
+  }
 }
 // New runSearch in navigation.js
 function getSearchableTextMap() {
-	if (searchableTextMap) return searchableTextMap;
+  if (searchableTextMap) return searchableTextMap;
 
-	let fullText = "";
-	const map = []; // Maps character index to its corresponding text node
-	const walker = document.createTreeWalker(textContainer, NodeFilter.SHOW_TEXT);
-	let node;
-	while (node = walker.nextNode()) {
-		const start = fullText.length;
-		fullText += node.textContent;
-		for (let i = start; i < fullText.length; i++) {
-			map[i] = { node: node, offset: i - start };
-		}
-	}
-	searchableTextMap = { fullText: fullText.toLowerCase(), map };
-	return searchableTextMap;
+  let fullText = "";
+  const map = []; // Maps character index to its corresponding text node
+  const walker = document.createTreeWalker(textContainer, NodeFilter.SHOW_TEXT);
+  let node;
+  while (node = walker.nextNode()) {
+    const start = fullText.length;
+    fullText += node.textContent;
+    for (let i = start; i < fullText.length; i++) {
+      map[i] = { node: node, offset: i - start };
+    }
+  }
+  searchableTextMap = { fullText: fullText.toLowerCase(), map };
+  return searchableTextMap;
 }
 function normalizeText(str) {
-    return str.trim().toLowerCase().replace(/\s+/g, " ");
+  return str.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 // --- New runSearch for navigation.js ---
 function getSearchableTextMap() {
-	if (searchableTextMap) return searchableTextMap;
+  if (searchableTextMap) return searchableTextMap;
 
-	let fullText = "";
-	const map = []; // Maps character index to its corresponding text node
-	const walker = document.createTreeWalker(textContainer, NodeFilter.SHOW_TEXT);
-	let node;
-	while (node = walker.nextNode()) {
-		const start = fullText.length;
-		fullText += node.textContent;
-		for (let i = start; i < fullText.length; i++) {
-			map[i] = { node: node, offset: i - start };
-		}
-	}
-	searchableTextMap = { fullText: fullText.toLowerCase(), map };
-	return searchableTextMap;
+  let fullText = "";
+  const map = []; // Maps character index to its corresponding text node
+  const walker = document.createTreeWalker(textContainer, NodeFilter.SHOW_TEXT);
+  let node;
+  while (node = walker.nextNode()) {
+    const start = fullText.length;
+    fullText += node.textContent;
+    for (let i = start; i < fullText.length; i++) {
+      map[i] = { node: node, offset: i - start };
+    }
+  }
+  searchableTextMap = { fullText: fullText.toLowerCase(), map };
+  return searchableTextMap;
 }
 
 // === PATCH: text search results now clickable with jumpToRange ===
@@ -407,7 +423,7 @@ function runSearch(query) {
 }
 
 // === New helper: jumpToRange ===
-function jumpToRange(startTimeParam, endTimeParam,delay=0) {
+function jumpToRange(startTimeParam, endTimeParam, delay = 0) {
   setTimeout(() => {
     const allUtterances = Array.from(document.querySelectorAll('.utterance'));
     if (allUtterances.length === 0) return;
@@ -417,7 +433,7 @@ function jumpToRange(startTimeParam, endTimeParam,delay=0) {
     const playClipButton = document.getElementById('play-clip-button');
 
     const targetStartTime = Math.floor(parseFloat(startTimeParam));
-    const targetEndTime   = Math.ceil(parseFloat(endTimeParam));
+    const targetEndTime = Math.ceil(parseFloat(endTimeParam));
 
     const startSpan = allUtterances.slice().reverse()
       .find(s => parseFloat(s.dataset.startTime) <= targetStartTime);
@@ -588,55 +604,55 @@ function runSearch(query, mode = "text") {
     let endTime = 0;
 
     if (mode === "text") {
-	  // ---- TEXT MODE ----
-	  const utterances = [];
-	  let current = startSpan;
-	  while (current) {
-		utterances.push(current);
-		if (current === endSpan) break;
-		current = current.nextElementSibling;
-	  }
+      // ---- TEXT MODE ----
+      const utterances = [];
+      let current = startSpan;
+      while (current) {
+        utterances.push(current);
+        if (current === endSpan) break;
+        current = current.nextElementSibling;
+      }
 
-	  // --- Find the speaker name ---
-	  let speakerSpan = startSpan ? startSpan.previousElementSibling : null;
-	  let speakerName = "";
-	  while (speakerSpan) {
-		if (!speakerSpan.classList?.contains("utterance")) {
-		  const text = speakerSpan.textContent?.trim() || "";
-		  if (text.startsWith("[")) {
-			speakerName = text; // e.g. "[Florence Smith]"
-			break;
-		  }
-		}
-		speakerSpan = speakerSpan.previousElementSibling;
-	  }
+      // --- Find the speaker name ---
+      let speakerSpan = startSpan ? startSpan.previousElementSibling : null;
+      let speakerName = "";
+      while (speakerSpan) {
+        if (!speakerSpan.classList?.contains("utterance")) {
+          const text = speakerSpan.textContent?.trim() || "";
+          if (text.startsWith("[")) {
+            speakerName = text; // e.g. "[Florence Smith]"
+            break;
+          }
+        }
+        speakerSpan = speakerSpan.previousElementSibling;
+      }
 
-	  // --- Determine if this is the first utterance by this speaker ---
-	  let prev = startSpan?.previousElementSibling;
-	  let isFirstInSpeech = true;
-	  while (prev && prev.classList?.contains("utterance")) {
-		isFirstInSpeech = false; // found a previous utterance → not first
-		break;
-	  }
+      // --- Determine if this is the first utterance by this speaker ---
+      let prev = startSpan?.previousElementSibling;
+      let isFirstInSpeech = true;
+      while (prev && prev.classList?.contains("utterance")) {
+        isFirstInSpeech = false; // found a previous utterance → not first
+        break;
+      }
 
-	  // --- Build snippet text ---
-	  const combinedText = utterances
-		.map(u => (u.textContent || "").trim())
-		.join(" ");
+      // --- Build snippet text ---
+      const combinedText = utterances
+        .map(u => (u.textContent || "").trim())
+        .join(" ");
 
-	  const regex = new RegExp(lowerCaseQuery, "gi");
-	  let highlighted = combinedText.replace(regex, m => `<b>${m}</b>`);
+      const regex = new RegExp(lowerCaseQuery, "gi");
+      let highlighted = combinedText.replace(regex, m => `<b>${m}</b>`);
 
-	  // Prepend speaker and ellipsis if needed
-	  let prefix = speakerName ? `${speakerName} ` : "";
-	  if (!isFirstInSpeech) prefix += "…";
+      // Prepend speaker and ellipsis if needed
+      let prefix = speakerName ? `${speakerName} ` : "";
+      if (!isFirstInSpeech) prefix += "…";
 
-	  snippet = prefix + highlighted;
+      snippet = prefix + highlighted;
 
-	  // --- Timing as before ---
-	  startTime = parseFloat(startSpan?.dataset.startTime || 0);
-	  endTime = parseFloat(endSpan?.dataset.endTime || endSpan?.dataset.startTime || startTime);
-	} else {
+      // --- Timing as before ---
+      startTime = parseFloat(startSpan?.dataset.startTime || 0);
+      endTime = parseFloat(endSpan?.dataset.endTime || endSpan?.dataset.startTime || startTime);
+    } else {
       // ---- NON-TEXT MODE ----
       const anchor = toElement(startPos?.node);
 
@@ -691,16 +707,16 @@ function runSearch(query, mode = "text") {
     searchIndex = endIndex;
   }
 
-  renderSearchResults(results, query,mode);
+  renderSearchResults(results, query, mode);
 }
 
-function renderSearchResults(results, query,mode="text") {
+function renderSearchResults(results, query, mode = "text") {
   let container;
-  if (mode=='text'){
-	container = document.querySelector('.search-results');
+  if (mode == 'text') {
+    container = document.querySelector('.search-results');
   } else {
     container = document.querySelector('.nav-tab-content[data-mode="speaker"] .search-results');
-  }  
+  }
   if (!container) return;
   container.innerHTML = '';
   if (!results.length) {
@@ -717,8 +733,8 @@ function renderSearchResults(results, query,mode="text") {
       range.setStart(r.startPos.node, r.startPos.offset);
       range.setEnd(r.endPos.node, r.endPos.offset);
       updatePlayerForRange(range);
-	  const element = r.startPos.node.nodeType === 3 ? r.startPos.node.parentElement : r.startPos.node;
-	  console.log(r.startPos.node.isConnected, r.startPos.node);
+      const element = r.startPos.node.nodeType === 3 ? r.startPos.node.parentElement : r.startPos.node;
+      console.log(r.startPos.node.isConnected, r.startPos.node);
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     ul.appendChild(li);
