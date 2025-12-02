@@ -51,6 +51,9 @@ function setupDropdownMenus() {
 
 function updatePlayerForTime(startTimeParam, endTimeParam) {
     setTimeout(() => {
+        const video = window.activeVideoPlayer || document.getElementById('videoElement');
+        if (!video) return;
+
         const allUtterances = Array.from(document.querySelectorAll('.utterance'));
         if (allUtterances.length === 0) return;
 
@@ -70,7 +73,7 @@ function updatePlayerForTime(startTimeParam, endTimeParam) {
                 selectionEndTime = parseFloat(allUtterances[nextSpanIndex].dataset.startTime);
             } else {
                 endSpan = allUtterances[allUtterances.length - 1];
-                selectionEndTime = videoElement.duration;
+                selectionEndTime = video.duration;
             }
 
             if (endSpan) {
@@ -79,13 +82,13 @@ function updatePlayerForTime(startTimeParam, endTimeParam) {
                 if (nextSpanAfterEnd) {
                     selectionEndTime = parseFloat(nextSpanAfterEnd.dataset.startTime);
                 } else {
-                    selectionEndTime = videoElement.duration;
+                    selectionEndTime = video.duration;
                 }
                 const timeRangeDisplay = document.getElementById('time-range');
                 const playClipButton = document.getElementById('play-clip-button');
                 timeRangeDisplay.textContent = `Clip: ${formatTime(selectionStartTime)} - ${formatTime(selectionEndTime)}`;
                 playClipButton.disabled = false;
-                videoElement.currentTime = selectionStartTime;
+                video.currentTime = selectionStartTime;
                 const newRange = document.createRange();
                 newRange.setStart(startSpan.firstChild, 0);
                 newRange.setEnd(endSpan.lastChild, endSpan.lastChild.length);
@@ -168,6 +171,7 @@ function updatePlayerForRange(range) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
     // Removed printable param check
 
 
