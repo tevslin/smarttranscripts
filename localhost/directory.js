@@ -208,7 +208,7 @@ function renderDirectory(rootNode, container, linkHrefGenerator, onLinkClick, ac
                 a.appendChild(spacer);
 
                 const icon = document.createElement('span');
-                icon.className = 'toc-icon folder-icon';
+                icon.className = 'toc-icon document-icon';
                 // icon.textContent = '📁'; 
 
                 const text = document.createElement('span');
