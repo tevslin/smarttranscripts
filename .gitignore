@@ -11,3 +11,9 @@ temp_*
 
 # And ignore subdirectories of localhost
 localhost/*/
+# Ignore all Markdown files
+*.md
+!README.md
+
+# Ignore timestamped backups
+*_202[0-9]*

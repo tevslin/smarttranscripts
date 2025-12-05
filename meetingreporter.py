@@ -101,6 +101,11 @@ You are an expert legislative aide. Your task is to analyze the provided transcr
 3.  Use the provided hint list of official members to help identify and correctly spell the names of regular participants.
 4.  For each unique speaker, create an object in the `speakers` array.
 5.  Provide a concise `reason` for each name assignment and a `confidence_level` from 0 to 10.
+6.  CRITICAL: If the <hint> section is provided and lists official members, any speaker responding to a roll call vote (e.g., "Aye", "Nay", "Present") MUST be identified as one of those listed members.
+7.  **Overlaps/Context Shifts:** If a single `speaker_id` (e.g., `[Speaker 3]`) is assigned to multiple different people at different times (due to diarization errors or overlap), create **multiple entries** for that `speaker_id` in the `speakers` array.
+    - For the "main" speaker associated with that ID, omit `start_time` and `end_time`.
+    - For the "temporary" or "overlapping" speaker, you MUST provide `start_time` and `end_time` (in seconds) defining the specific range where this person is speaking.
+    - Only create these time-bound overrides if your `confidence_level` is **8 or higher**. If unsure, default to the main speaker or a generic label.
 
 **Rules for Agenda Generation:**
 1.  Identify the main, distinct agenda items discussed during the meeting. An agenda item is a discrete topic of discussion, often introduced by the chair or clerk (e.g., "Item twenty four," "Special Order 2:30 PM," "General Public Comment").
@@ -119,7 +124,7 @@ You are an expert legislative aide. Your task is to analyze the provided transcr
 ```
 
 **Output Format:**
-The output MUST be a single, valid JSON object with two top-level keys: `speakers` and `agenda_items`. The keys within each object (`speaker_id`, `speaker_name`, `reason`, `confidence_level`, `title`, `start_time`, `summary`) must be named exactly as specified. Do not include any other text or explanations outside of the JSON object.
+The output MUST be a single, valid JSON object with two top-level keys: `speakers` and `agenda_items`. The keys within each object (`speaker_id`, `speaker_name`, `reason`, `confidence_level`, `start_time`, `end_time`, `title`, `summary`) must be named exactly as specified. Do not include any other text or explanations outside of the JSON object.
 
 <transcript>
 {prompt_transcript}
@@ -190,6 +195,7 @@ def generate_static_html(template_path, output_path, meeting_data):
 
         agenda_time_map = {item.get('start_time'): f'id="item-{i}"' for i, item in enumerate(agenda_items)}
         speaker_map = meeting_data.get('speaker_map', {})
+        speaker_overrides = meeting_data.get('speaker_overrides', [])
         
         # --- New Stateful HTML and Data Generation ---
         rebuilt_transcript_html = ""
@@ -197,21 +203,30 @@ def generate_static_html(template_path, output_path, meeting_data):
         recalculated_sentence_timings = []
         
         current_speaker = -1
+        current_speaker_name = ""
 
         paragraphs = meeting_data.get('paragraphs', [])
         for para in paragraphs:
             speaker_id = para.get('speaker')
+            para_start = para.get('start', 0)
             
-            if speaker_id != current_speaker:
+            # Resolve speaker name with overrides
+            resolved_name = speaker_map.get(speaker_id, f"Speaker {speaker_id}")
+            for override in speaker_overrides:
+                if override['id'] == speaker_id and override['start'] <= para_start <= override['end']:
+                    resolved_name = override['name']
+                    break
+            
+            if speaker_id != current_speaker or resolved_name != current_speaker_name:
                 if current_speaker != -1:
                     rebuilt_transcript_html += '</p>\n' # Close previous speaker's paragraph
                 
-                speaker_name = speaker_map.get(speaker_id, f"Speaker {speaker_id}")
-                speaker_label_html = f'<p><strong>[{speaker_name}]:</strong> '
-                speaker_label_text = f"[{speaker_name}]: "
+                speaker_label_html = f'<p><strong>[{resolved_name}]:</strong> '
+                speaker_label_text = f"[{resolved_name}]: "
                 rebuilt_transcript_html += speaker_label_html
                 plain_text_for_offsets += speaker_label_text
                 current_speaker = speaker_id
+                current_speaker_name = resolved_name
             else:
                 # It's the same speaker, just add a newline for the new paragraph
                 rebuilt_transcript_html += "\n"
@@ -348,16 +363,33 @@ def video_to_static_transcript(
     # 4. Assemble Final Data Object for the Template
     
     speaker_map = {}
+    speaker_overrides = []
+
     for sp in structured_data.get('speakers', []):
         speaker_id_val = sp.get('speaker_id') or sp.get('id')
         speaker_name = sp.get('speaker_name') or sp.get('name')
+        
+        start_time = sp.get('start_time')
+        end_time = sp.get('end_time')
+
         if speaker_id_val is not None and speaker_name:
             try:
                 # Ensure the value is a string before splitting
                 speaker_id_str = str(speaker_id_val)
-                # Extract the integer from a string like "Speaker 0" or just "0"
-                speaker_id_int = int(speaker_id_str.split(' ')[-1])
-                speaker_map[speaker_id_int] = speaker_name
+                # Extract the integer from a string like "Speaker 0" or "Speaker 0.0" or just "0"
+                speaker_id_int = int(float(speaker_id_str.split(' ')[-1]))
+                
+                if start_time is not None and end_time is not None:
+                    # This is a time-bound override
+                    speaker_overrides.append({
+                        "id": speaker_id_int,
+                        "name": speaker_name,
+                        "start": float(start_time),
+                        "end": float(end_time)
+                    })
+                else:
+                    # This is a default mapping
+                    speaker_map[speaker_id_int] = speaker_name
             except (ValueError, IndexError):
                 logger.warning(f"Could not parse speaker_id: '{speaker_id_val}'")
 
@@ -367,6 +399,7 @@ def video_to_static_transcript(
         "speakers": structured_data.get('speakers', []),
         "agenda_items": structured_data.get('agenda_items', []),
         "speaker_map": speaker_map,
+        "speaker_overrides": speaker_overrides,
         "paragraphs": deepgram_results.get('channels', [{}])[0].get('alternatives', [{}])[0].get('paragraphs', {}).get('paragraphs', []),
         "jurisdiction":jurisdiction
     }

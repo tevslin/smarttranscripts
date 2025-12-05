@@ -14,11 +14,11 @@
 <body>
     <div id="header-placeholder">
         <header class="page-header">
-            <h1><a href="/index.html">{{APP_TITLE}} </a> </h1>
-            <h2 id="meeting-title">{{MEETING_TITLE}} </h2>
-            <nav id="viewer-menu">
-                <!-- Menus will be dynamically inserted here by viewer_logic.js -->
-            </nav>
+            <div class="header-title-group">
+                <h1><a href="/index.html">{{APP_TITLE}}</a>:</h1>
+                <h2 id="meeting-title">{{MEETING_TITLE}}</h2>
+            </div>
+            <img id="header-banner" src="/banner.png" alt="Banner">
         </header>
     </div>
     <div id="main-content">
@@ -47,7 +47,12 @@
                 </div>
             </div>
             <div id="transcript-pane">
-                <h2> Transcript: Select text below to play or share a clip</h2>
+                <div id="transcript-header">
+                    <h2> Transcript: Select text below to play or share a clip</h2>
+                    <nav id="viewer-menu">
+                        <!-- Menus will be dynamically inserted here by viewer_logic.js -->
+                    </nav>
+                </div>
                 <div id="transcript-container">
                     <div id="text-container">
                         {{TRANSCRIPT_HTML}}

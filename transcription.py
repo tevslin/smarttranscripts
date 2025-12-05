@@ -1,13 +1,8 @@
 from tenacity import retry, stop_after_attempt, wait_fixed, after_log, before_log, RetryError
 import functools
+
 import httpx
-from deepgram.utils import verboselogs
-from deepgram import (
-    DeepgramClient,
-    DeepgramClientOptions,
-    PrerecordedOptions,
-    FileSource,
-    )
+from deepgram import DeepgramClient
 import os
 import pickle
 import logging
@@ -29,37 +24,34 @@ def call_deepgram(func, *args, **kwargs):
 
 def transcribe_audio(input_file, output_file=None, topics=False):
     """
-    This version runs with deepgram Version: 4.8.1 not later
-    versions.
+    This version runs with deepgram-sdk>=5.0.0.
     """
     if 'DEEPGRAM_API_KEY' not in os.environ:
         from dotenv import load_dotenv
         load_dotenv()
     assert 'DEEPGRAM_API_KEY' in os.environ,"no API Key for Deepgram!"
 
-    config: DeepgramClientOptions = DeepgramClientOptions(
-            verbose=verboselogs.WARNING,
-        )
-    deepgram: DeepgramClient = DeepgramClient("", config)
+    # Initialize the client (v5 style) with custom timeout via httpx_client
+    deepgram: DeepgramClient = DeepgramClient(
+        api_key=os.environ["DEEPGRAM_API_KEY"],
+        httpx_client=httpx.Client(timeout=httpx.Timeout(600.0, connect=100.0))
+    )
 
     with open(input_file, "rb") as file:
         buffer_data = file.read()
 
-    payload: FileSource = {
-            "buffer": buffer_data,
-        }
-    
-    options: PrerecordedOptions = PrerecordedOptions(
+    # Define the API call using v5 syntax
+    # Note: Options are now passed as kwargs directly
+    transcribe_func = functools.partial(
+        deepgram.listen.v1.media.transcribe_file,
+        request=buffer_data,
         model="nova-2-meeting",
         topics=topics,
         utterances=True,
         punctuate=True,
         diarize=True,
-        paragraphs=True
-        )
-    transcribe_func = functools.partial(
-        deepgram.listen.rest.v("1").transcribe_file,
-        payload, options, timeout=httpx.Timeout(600.0, connect=100.0)
+        smart_format=True,
+        paragraphs=True,
     )
 
     response = call_deepgram(transcribe_func)
@@ -67,9 +59,9 @@ def transcribe_audio(input_file, output_file=None, topics=False):
 
     if output_file:
         with open(output_file,'w') as f:
-            f.write(response.to_json(indent=4))
+            f.write(response.model_dump_json(indent=4))
     
-    return response.to_json(indent=4)
+    return response.model_dump_json(indent=4)
     
 def main(audio: str, output: str = None, doprint: bool = False):
     """Main entry point."""

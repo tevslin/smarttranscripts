@@ -407,6 +407,50 @@ body {
     background: #fff;
 }
 
+#transcript-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    /* Padding for the container */
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    flex-shrink: 0;
+}
+
+#transcript-header h2 {
+    margin: 0;
+    padding: 10px 0;
+    /* Vertical padding only */
+    border-bottom: none;
+    /* Remove border from h2 as container has it */
+    flex-grow: 1;
+}
+
+/* Header Title Group */
+.header-title-group {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
+}
+
+.header-title-group h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: normal;
+    color: #333;
+}
+
+#header-banner {
+    height: 90%;
+    max-height: 60px;
+    /* Constraint to prevent excessive growth */
+    margin-left: auto;
+    object-fit: contain;
+}
+
 #transcript-container {
     flex: 1;
     overflow-y: auto;

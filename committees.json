@@ -18,24 +18,24 @@
                 "email": "Connie.Chan@sfgov.org"
             },
             {
-                "name": "Catherine Stefani",
+                "name": "Stephen Sherill",
                 "title": "Supervisor, District 2",
                 "email": "Catherine.Stefani@sfgov.org"
             },
             {
-                "name": "Aaron Peskin",
+                "name": "Danny Sauter",
                 "title": "Supervisor, District 3",
                 "email": "Aaron.Peskin@sfgov.org"
             },
             {
-                "name": "Joel Engardio",
+                "name": "Alan Wong",
                 "title": "Supervisor, District 4",
                 "email": "Joel.Engardio@sfgov.org"
             },
             {
-                "name": "Dean Preston",
+                "name": "Bilal Mahmood",
                 "title": "Supervisor, District 5",
-                "email": "Dean.Preston@sfgov.org"
+                "email": "Bilal.@sfgov.org"
             },
             {
                 "name": "Matt Dorsey",
@@ -58,7 +58,7 @@
                 "email": "Shamann.Walton@sfgov.org"
             },
             {
-                "name": "Ahsha Safai",
+                "name": "Chayanne Chen",
                 "title": "Supervisor, District 11",
                 "email": "Ahsha.Safai@sfgov.org"
             }
@@ -423,7 +423,7 @@
         "name": "Planning Commission",
         "id": "20",
         "parent_committee": null,
-        "process_count": 1,
+        "process_count": 0,
         "members": [
             {
                 "name": "Lydia So",
