@@ -1,13 +1,33 @@
-
 import { initializeDirectory } from './directory.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const tocPane = document.getElementById('toc-pane');
     const tocContent = document.getElementById('toc-content');
     const pinButton = document.getElementById('toc-pin-button');
     const resizeHandle = document.getElementById('toc-resize-handle');
 
     if (!tocPane || !tocContent) return;
+
+    // --- Redirection Logic (Index Page Only) ---
+    // Try to open the last visited transcript, or fallback to the first available one.
+    // We check for trailing slashes or explicit index.html
+    const isIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('/');
+
+    if (isIndexPage) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('no_redirect')) {
+            const lastOpened = localStorage.getItem('lastOpenedTranscript');
+            // Verify lastOpened is really a path and not "null" string
+            if (lastOpened && lastOpened !== 'null') {
+                window.location.href = lastOpened;
+                return; // Stop processing to avoid flash
+            }
+        }
+    } else {
+        // We are on a transcript page. Save this as the last opened state.
+        // We use the pathname (e.g. /meetings/Committee/Date/transcript.html)
+        localStorage.setItem('lastOpenedTranscript', window.location.pathname);
+    }
 
     // --- Initialization ---
     // Wrap header and content in a container for flyout behavior
@@ -20,20 +40,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const content = document.getElementById('toc-content');
         if (header) tocWrapper.appendChild(header);
         if (content) tocWrapper.appendChild(content);
-        // Insert wrapper into pane (resize handle stays outside or append it back?)
-        // Resize handle should probably be outside wrapper if it resizes the pane width.
-        // But if unpinned, resize handle might be hidden or part of flyout?
-        // Let's keep resize handle as direct child of pane for now.
+
+        // Insert wrapper into pane (resize handle stays outside)
         tocPane.insertBefore(tocWrapper, resizeHandle);
     }
 
-    initializeDirectory(document.getElementById('toc-content'), {
-        activePath: window.location.pathname,
-        linkHrefGenerator: (path) => path // Use the absolute path directly
+    // Initialize directory
+    // We await this so we can perform post-render actions (like fallback redirect)
+    await initializeDirectory(document.getElementById('toc-content'), {
+        activePath: window.location.pathname, // Highlights current page
+        linkHrefGenerator: (path) => path
     });
 
+    // --- Fallback Redirection (Index Page Only) ---
+    // If we are still here (didn't redirect to lastOpened), and we are on index page,
+    // open the first item in the list.
+    if (isIndexPage) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('no_redirect')) {
+            // We didn't redirect to lastOpened, so try the first item
+            const firstLink = document.querySelector('#toc-content a.toc-link');
+            if (firstLink) {
+                window.location.href = firstLink.href;
+                return;
+            }
+        }
+    }
+
     // --- Pinning Logic ---
-    // Default to pinned (true) if not set
     let savedState = null;
     try {
         savedState = localStorage.getItem('tocPinned');
@@ -42,9 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     let isPinned = savedState === null ? true : savedState === 'true';
 
-    // Check if we are on index.html or root
-    const isIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
-
+    // Force pinned on index page (though we redirect usually, but if no_redirect used)
     if (isIndexPage) {
         isPinned = true;
     }
@@ -67,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Only save state if NOT on index page, to avoid overwriting user preference with forced state
+        // Only save state if NOT on index page
         if (!isIndexPage) {
             try {
                 localStorage.setItem('tocPinned', isPinned);
@@ -91,8 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Outlook-like behavior:
     // When unpinned, clicking the hamburger (or the strip) toggles "expanded" mode (overlay).
-    // It does NOT pin it back.
-
     tocPane.addEventListener('click', (e) => {
         if (tocPane.classList.contains('unpinned')) {
             // If clicking the pin button, don't toggle expand (handled above)

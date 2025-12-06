@@ -25,12 +25,66 @@ export async function initializeDirectory(container, options = {}) {
             hierarchy = await discoverMeetingsS3(s3IndexUrl);
         }
 
-        renderDirectory(hierarchy, container, linkHrefGenerator, onLinkClick, activePath);
+        renderDirectory(hierarchy, container, linkHrefGenerator, onLinkClick);
         restoreDirectoryState();
+
+        // Enforce active path visibility *after* attempting to restore state
+        if (activePath) {
+            revealActivePath(container, activePath);
+        }
 
     } catch (error) {
         console.error("Directory initialization failed:", error);
         container.innerHTML = '<li>Error loading meetings.</li>';
+    }
+}
+
+
+function revealActivePath(container, activePath) {
+    if (!activePath) return;
+
+    // Normalize: remove query params, decode, and strip leading/trailing slashes for comparison
+    const normalize = (p) => decodeURIComponent(p.split('?')[0]).replace(/^\/+|\/+$/g, "");
+    const target = normalize(activePath);
+
+    const links = container.querySelectorAll('a.toc-link');
+
+    for (const link of links) {
+        const rawPath = link.dataset.path;
+        if (!rawPath) continue;
+
+        const current = normalize(rawPath);
+
+        // Match if identical OR if one ends with the other (handling potential relative/absolute mismatches)
+        // e.g. target="meetings/Comm/Date/transcript.html" matches current="meetings/Comm/Date/transcript.html"
+        if (current === target || (current.length > 5 && target.endsWith(current)) || (target.length > 5 && current.endsWith(target))) {
+
+            link.classList.add('active-meeting');
+
+            // Expand all parent folders up to the root
+            let curr = link.closest('li');
+            while (curr && container.contains(curr)) {
+                // If we hit a nested list, expand it
+                if (curr.tagName === 'UL' && curr.classList.contains('nested')) {
+                    curr.classList.add('active');
+
+                    // Also flip the toggle arrow on the parent folder LI
+                    const parentLi = curr.parentElement;
+                    if (parentLi && parentLi.classList.contains('toc-folder')) {
+                        const toggle = parentLi.querySelector('.toc-toggle');
+                        if (toggle) toggle.classList.add('open');
+                    }
+                }
+                curr = curr.parentElement;
+            }
+
+            // Scroll the active link into view so user sees it
+            setTimeout(() => {
+                link.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+
+            break; // Found and handled the active link
+        }
     }
 }
 
@@ -171,7 +225,7 @@ function buildHierarchyFromPaths(paths) {
     return root;
 }
 
-function renderDirectory(rootNode, container, linkHrefGenerator, onLinkClick, activePath) {
+function renderDirectory(rootNode, container, linkHrefGenerator, onLinkClick) {
     container.innerHTML = '';
     const ul = document.createElement('ul');
     ul.className = 'toc-list';
@@ -218,21 +272,6 @@ function renderDirectory(rootNode, container, linkHrefGenerator, onLinkClick, ac
                 a.appendChild(icon);
                 a.appendChild(text);
                 li.appendChild(a);
-
-                if (activePath && child.linkPath === activePath) {
-                    a.classList.add('active-meeting');
-                    // Expand parents
-                    let parent = li.parentElement;
-                    while (parent && parent !== container) {
-                        if (parent.classList.contains('nested')) {
-                            parent.classList.add('active');
-                            const folderLi = parent.parentElement;
-                            const toggle = folderLi.querySelector('.toc-toggle');
-                            if (toggle) toggle.classList.add('open');
-                        }
-                        parent = parent.parentElement;
-                    }
-                }
 
                 if (onLinkClick) {
                     a.addEventListener('click', (e) => {

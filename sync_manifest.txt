@@ -12,3 +12,4 @@ navigation.js
 youtubePlayer.js
 sync_manifest.txt
 banner.png
+favicon.ico
