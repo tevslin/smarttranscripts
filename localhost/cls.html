@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset User State</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            color: #666;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-cancel {
+            background-color: #e4e6eb;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .btn-cancel:hover {
+            background-color: #d8dadf;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="prompt-container">
+        <h1>Confirm Reset</h1>
+        <p>Are you sure you want to be treated as a new user of <strong id="domain-name">This Site</strong>?</p>
+        <button class="btn btn-cancel" onclick="cancel()">Cancel</button>
+        <button class="btn" onclick="confirmReset()">OK</button>
+    </div>
+
+    <div class="container hidden" id="success-container">
+        <h1>Reset Complete</h1>
+        <p>Your next use of <strong id="domain-name-success">This Site</strong> will be as if you were a new user.</p>
+        <button class="btn" onclick="terminate()">OK</button>
+    </div>
+
+    <script>
+        const domain = window.location.hostname;
+        document.getElementById('domain-name').textContent = domain;
+        document.getElementById('domain-name-success').textContent = domain;
+
+        function confirmReset() {
+            try {
+                localStorage.clear();
+                // We handle session storage too just in case, though user only asked for local storage
+                sessionStorage.clear();
+
+                document.getElementById('prompt-container').classList.add('hidden');
+                document.getElementById('success-container').classList.remove('hidden');
+            } catch (e) {
+                alert("Error clearing storage: " + e.message);
+            }
+        }
+
+        function cancel() {
+            // Attempt to close, otherwise direct to index
+            if (!attemptClose()) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        function terminate() {
+            if (!attemptClose()) {
+                document.body.innerHTML = "<div style='text-align:center; margin-top:50px;'><h1>Done.</h1><p>You may now close this tab.</p></div>";
+            }
+        }
+
+        function attemptClose() {
+            try {
+                window.close();
+                // If window.close() didn't work (which it mostly won't if not opened by script),
+                // we return false to indicate we should show a message or redirect.
+                return false;
+            } catch (e) {
+                return false;
+            }
+        }
+    </script>
+</body>
+
+</html>

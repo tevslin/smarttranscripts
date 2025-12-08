@@ -1,16 +1,33 @@
 /**
  * directory.js
  * Shared logic for discovering and rendering the meeting directory.
+ * Hybrid Version: Uses S3 XML for data (no JSON index), but retains V1 UI/UX/State logic.
  */
 
 export async function initializeDirectory(container, options = {}) {
+    // Default: Fetch config.json to get bucket name
+    let configBucketUrl = null;
+    try {
+        const configResp = await fetch('/config.json');
+        if (configResp.ok) {
+            const config = await configResp.json();
+            if (config.bucketName) {
+                configBucketUrl = `https://s3.us-east-1.amazonaws.com/${config.bucketName}/`;
+                console.log("Directory: Loaded configuration from config.json", configBucketUrl);
+            }
+        }
+    } catch (e) {
+        console.warn("Directory: Could not load config.json, will use provided options or default.", e);
+    }
+
     const {
         isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
-        meetingsRoot = '/meetings/', // Default to absolute path
-        s3IndexUrl = '/meetings/meetings_index.json',
-        onLinkClick = null, // Callback: (event, path) => { ... }
-        linkHrefGenerator = (path) => path, // Function: (path) => string
-        activePath = null // The path of the current page, to highlight it
+        meetingsRoot = '/meetings/',
+        // Use configured URL if available, otherwise expects caller to provide it or fails
+        bucketUrl = configBucketUrl,
+        onLinkClick = null,
+        linkHrefGenerator = (path) => path,
+        activePath = null
     } = options;
 
     let hierarchy = {};
@@ -21,8 +38,10 @@ export async function initializeDirectory(container, options = {}) {
             const paths = await discoverMeetingsLocal(meetingsRoot);
             hierarchy = buildHierarchyFromPaths(paths);
         } else {
-            console.log("Directory: Running in S3 mode.");
-            hierarchy = await discoverMeetingsS3(s3IndexUrl);
+            console.log("Directory: Running in S3 mode (XML Discovery).");
+            // Use the new XML discovery with NO json index dependency
+            const paths = await discoverMeetingsS3Xml(bucketUrl);
+            hierarchy = buildHierarchyFromPaths(paths);
         }
 
         renderDirectory(hierarchy, container, linkHrefGenerator, onLinkClick);
@@ -56,7 +75,6 @@ function revealActivePath(container, activePath) {
         const current = normalize(rawPath);
 
         // Match if identical OR if one ends with the other (handling potential relative/absolute mismatches)
-        // e.g. target="meetings/Comm/Date/transcript.html" matches current="meetings/Comm/Date/transcript.html"
         if (current === target || (current.length > 5 && target.endsWith(current)) || (target.length > 5 && current.endsWith(target))) {
 
             link.classList.add('active-meeting');
@@ -124,66 +142,48 @@ async function discoverMeetingsLocal(baseUrl) {
     }
 }
 
-async function discoverMeetingsS3(indexUrl) {
-    const response = await fetch(indexUrl);
-    const data = await response.json();
-    if (Array.isArray(data)) {
-        return buildHierarchyFromPaths(data);
-    }
-    // It's the nested object format from sync_meetings.py
-    return convertS3IndexToHierarchy(data);
-}
+// --- NEW FUNCTION: XML Discovery ---
+async function discoverMeetingsS3Xml(bucketUrl) {
+    const allKeys = [];
+    let continuationToken = '';
 
-function convertS3IndexToHierarchy(data) {
-    const root = { name: "root", type: "folder", children: {} };
+    try {
+        if (!bucketUrl) throw new Error("Bucket URL missing for XML discovery.");
 
-    for (const [committeeName, subcommittees] of Object.entries(data)) {
-        // Create committee folder
-        if (!root.children[committeeName]) {
-            root.children[committeeName] = {
-                name: committeeName,
-                type: "folder",
-                children: {}
-            };
-        }
-        const committeeNode = root.children[committeeName];
-
-        for (const [subcommitteeName, meetings] of Object.entries(subcommittees)) {
-            // Create subcommittee folder
-            // If subcommittee is "Full_Board", maybe we want to flatten it or keep it?
-            // The viewer expects a hierarchy. Let's keep it for now.
-            if (!committeeNode.children[subcommitteeName]) {
-                committeeNode.children[subcommitteeName] = {
-                    name: subcommitteeName,
-                    type: "folder",
-                    children: {}
-                };
+        while (true) {
+            let url = `${bucketUrl}?list-type=2&max-keys=1000`;
+            if (continuationToken) {
+                url += `&continuation-token=${encodeURIComponent(continuationToken)}`;
             }
-            const subcommitteeNode = committeeNode.children[subcommitteeName];
 
-            // Add meetings
-            if (Array.isArray(meetings)) {
-                meetings.forEach(meeting => {
-                    // meeting is { name: "2024-01-01", path: "..." }
-                    // Ensure path starts with /
-                    let linkPath = meeting.path;
-                    if (!linkPath.startsWith('/')) {
-                        linkPath = '/' + linkPath;
-                    }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`S3 Fetch Failed: ${response.status}`);
 
-                    // The viewer expects the meeting node to be a child with isMeeting=true
-                    subcommitteeNode.children[meeting.name] = {
-                        name: meeting.name,
-                        type: "file", // or folder? buildHierarchy uses folder but sets isMeeting=true
-                        isMeeting: true,
-                        linkPath: linkPath,
-                        children: {} // Meetings don't have children in this view
-                    };
-                });
+            const text = await response.text();
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(text, "application/xml");
+
+            const contents = xml.getElementsByTagName('Contents');
+            for (let i = 0; i < contents.length; i++) {
+                const key = contents[i].getElementsByTagName('Key')[0].textContent;
+                // Only collect relevant transcript files
+                if (key.endsWith('transcript.html') && key.includes('meetings/')) {
+                    // CRITICAL FIX: Prepend slash to ensure absolute path
+                    allKeys.push('/' + key);
+                }
             }
+
+            const isTruncated = xml.getElementsByTagName('IsTruncated')[0]?.textContent === 'true';
+            const nextToken = xml.getElementsByTagName('NextContinuationToken')[0]?.textContent;
+
+            if (!isTruncated) break;
+            continuationToken = nextToken;
         }
+        return allKeys;
+    } catch (e) {
+        console.error("XML Discovery Error:", e);
+        return [];
     }
-    return root;
 }
 
 function buildHierarchyFromPaths(paths) {
@@ -206,8 +206,12 @@ function buildHierarchyFromPaths(paths) {
                 // This path ends in transcript.html. 
                 // The CURRENT node (parent of this part) is the meeting folder.
                 currentNode.isMeeting = true;
-                currentNode.linkPath = fullPath;
-                // We do NOT add transcript.html as a child.
+                currentNode.linkPath = fullPath; // Use the provided fullPath (which should be absolute now)
+
+                // Double check for absolute path safety
+                if (!currentNode.linkPath.startsWith('/')) {
+                    currentNode.linkPath = '/' + currentNode.linkPath;
+                }
             } else {
                 // It's a folder or a file not named transcript.html
                 if (!currentNode.children[part]) {
@@ -225,10 +229,19 @@ function buildHierarchyFromPaths(paths) {
     return root;
 }
 
+
 function renderDirectory(rootNode, container, linkHrefGenerator, onLinkClick) {
     container.innerHTML = '';
     const ul = document.createElement('ul');
     ul.className = 'toc-list';
+
+    // Retrieve saved "expanded list" state
+    let expandedLists = {};
+    try {
+        expandedLists = JSON.parse(localStorage.getItem('expandedListsState')) || {};
+    } catch (e) {
+        // ignore
+    }
 
     const sortChildren = (children) => {
         return Object.values(children).sort((a, b) => {
@@ -241,76 +254,129 @@ function renderDirectory(rootNode, container, linkHrefGenerator, onLinkClick) {
         });
     };
 
-    const buildTree = (node, parentElement) => {
+    const buildTree = (node, parentElement, pathKey = 'root') => {
         const sortedNodes = sortChildren(node.children);
 
-        sortedNodes.forEach(child => {
+        // Split nodes into meetings and folders
+        const meetings = sortedNodes.filter(n => n.isMeeting);
+        const folders = sortedNodes.filter(n => !n.isMeeting);
+
+        // --- Render Meetings with "Show More" Logic ---
+        // Max initial display items
+        const MAX_VISIBLE = 5;
+        const totalMeetings = meetings.length;
+
+        // Determine is expanded from saved state
+        let isExpanded = expandedLists[pathKey] === true;
+
+        meetings.forEach((child, index) => {
             const li = document.createElement('li');
+            li.className = 'toc-item';
 
-            if (child.isMeeting) {
-                // It is a meeting folder. Render as a link item with folder icon.
-                li.className = 'toc-item';
-
-                const a = document.createElement('a');
-                a.className = 'toc-link';
-                a.href = linkHrefGenerator(child.linkPath);
-                a.dataset.path = child.linkPath;
-
-                // Add spacer to align with folders that have toggles
-                const spacer = document.createElement('span');
-                spacer.className = 'toc-toggle-spacer';
-                a.appendChild(spacer);
-
-                const icon = document.createElement('span');
-                icon.className = 'toc-icon document-icon';
-                // icon.textContent = '📁'; 
-
-                const text = document.createElement('span');
-                text.className = 'toc-text';
-                text.textContent = child.name.replace(/_/g, ' ');
-
-                a.appendChild(icon);
-                a.appendChild(text);
-                li.appendChild(a);
-
-                if (onLinkClick) {
-                    a.addEventListener('click', (e) => {
-                        onLinkClick(e, child.linkPath);
-                    });
-                }
-
-                parentElement.appendChild(li);
-
-            } else {
-                // Regular folder
-                li.className = 'toc-folder';
-
-                const row = document.createElement('div');
-                row.className = 'toc-folder-row';
-
-                const toggle = document.createElement('span');
-                toggle.className = 'toc-toggle';
-
-                const icon = document.createElement('span');
-                icon.className = 'toc-icon folder-icon';
-
-                const label = document.createElement('span');
-                label.className = 'toc-label';
-                label.textContent = child.name.replace(/_/g, ' ');
-
-                row.appendChild(toggle);
-                row.appendChild(icon);
-                row.appendChild(label);
-                li.appendChild(row);
-
-                const nestedUl = document.createElement('ul');
-                nestedUl.className = 'nested';
-                li.appendChild(nestedUl);
-
-                buildTree(child, nestedUl);
-
-                parentElement.appendChild(li);
+            // Hide items beyond limit if not expanded
+            if (!isExpanded && index >= MAX_VISIBLE) {
+                li.style.display = 'none';
+                li.classList.add('hidden-toc-item'); // Marker class
             }
+
+            const a = document.createElement('a');
+            a.className = 'toc-link';
+            a.href = linkHrefGenerator(child.linkPath);
+            a.dataset.path = child.linkPath;
+
+            const spacer = document.createElement('span');
+            spacer.className = 'toc-toggle-spacer';
+            a.appendChild(spacer);
+
+            const icon = document.createElement('span');
+            icon.className = 'toc-icon document-icon';
+            // icon.textContent = '📁'; 
+
+            const text = document.createElement('span');
+            text.className = 'toc-text';
+            text.textContent = child.name.replace(/_/g, ' ');
+
+            a.appendChild(icon);
+            a.appendChild(text);
+            li.appendChild(a);
+
+            if (onLinkClick) {
+                a.addEventListener('click', (e) => {
+                    onLinkClick(e, child.linkPath);
+                });
+            }
+
+            parentElement.appendChild(li);
+
+            // Inject Toggle Button after the 5th item (index 4) if we have more
+            if (index === MAX_VISIBLE - 1 && totalMeetings > MAX_VISIBLE) {
+                const toggleLi = document.createElement('li');
+                toggleLi.className = 'toc-show-more';
+                toggleLi.style.cursor = 'pointer';
+                toggleLi.style.paddingLeft = '2.5rem'; // Align with text
+                toggleLi.style.color = '#007bff';
+                toggleLi.style.fontSize = '0.9em';
+
+                // Set initial text
+                toggleLi.textContent = isExpanded ? '[ Show Less ]' : `[ Show ${totalMeetings - MAX_VISIBLE} More... ]`;
+
+                toggleLi.onclick = (e) => {
+                    e.stopPropagation();
+                    const hiddenItems = parentElement.querySelectorAll('.hidden-toc-item');
+
+                    if (!isExpanded) {
+                        // Expand
+                        hiddenItems.forEach(item => item.style.display = '');
+                        toggleLi.textContent = '[ Show Less ]';
+                        isExpanded = true;
+                    } else {
+                        // Collapse
+                        hiddenItems.forEach(item => item.style.display = 'none');
+                        toggleLi.textContent = `[ Show ${totalMeetings - MAX_VISIBLE} More... ]`;
+                        isExpanded = false;
+                    }
+
+                    // Save State
+                    expandedLists[pathKey] = isExpanded;
+                    localStorage.setItem('expandedListsState', JSON.stringify(expandedLists));
+                };
+
+                parentElement.appendChild(toggleLi);
+            }
+        });
+
+        // --- Render Folders ---
+        folders.forEach(child => {
+            const li = document.createElement('li');
+            li.className = 'toc-folder';
+
+            const row = document.createElement('div');
+            row.className = 'toc-folder-row';
+
+            const toggle = document.createElement('span');
+            toggle.className = 'toc-toggle';
+
+            const icon = document.createElement('span');
+            icon.className = 'toc-icon folder-icon';
+
+            const label = document.createElement('span');
+            label.className = 'toc-label';
+            label.textContent = child.name.replace(/_/g, ' ');
+
+            row.appendChild(toggle);
+            row.appendChild(icon);
+            row.appendChild(label);
+            li.appendChild(row);
+
+            const nestedUl = document.createElement('ul');
+            nestedUl.className = 'nested';
+            li.appendChild(nestedUl);
+
+            // Recursively build, generating a unique key for state persistence
+            // Using name hierarchy as key
+            buildTree(child, nestedUl, pathKey + '/' + child.name);
+
+            parentElement.appendChild(li);
         });
     };
 

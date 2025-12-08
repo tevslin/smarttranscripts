@@ -112,33 +112,9 @@ def sync_meetings_to_s3(source_dir: str, bucketname: str = None):
                 upload_file(s3, local_path, BUCKET_NAME, s3_key)
                 uploaded_files.append(s3_key)
 
-    # --- 2. Generate and upload the JSON index from S3's final state ---
-    print("\n--- Generating and Uploading Directory Index from S3 ---")
-    s3_objects_after_sync = get_s3_objects(BUCKET_NAME, prefix='meetings/')
-    
-    hierarchy = {}
-    transcript_paths = [key for key in s3_objects_after_sync if key.endswith('transcript.html')]
+    # --- 2. (Removed) JSON Index Generation ---
+    # The application now uses S3 XML discovery, so meetings_index.json is no longer required.
 
-    for s3_key in transcript_paths:
-        parts = s3_key.split('/')[1:-1] # Skip 'meetings' and 'transcript.html'
-        if len(parts) < 2: continue
-        
-        committee, subcommittee, meeting = (parts[0], 'Full_Board', parts[1]) if len(parts) == 2 else (parts[0], parts[1], parts[2])
-
-        if committee not in hierarchy: hierarchy[committee] = {}
-        if subcommittee not in hierarchy[committee]: hierarchy[committee][subcommittee] = []
-        hierarchy[committee][subcommittee].append({'name': meeting, 'path': s3_key})
-
-    # Create a temporary local file for the index to upload it
-    temp_index_path = os.path.join(project_root, 'temp_meeting_list.json')
-    with open(temp_index_path, 'w') as f:
-        json.dump(hierarchy, f)
-
-    index_s3_key = 'meetings/meetings_index.json'
-    print(f"{GREEN}UPLOAD (index): {index_s3_key}{RESET}")
-    upload_file(s3, temp_index_path, BUCKET_NAME, index_s3_key)
-    uploaded_files.append(index_s3_key)
-    os.remove(temp_index_path) # Clean up local temp file
 
     # --- 3. Invalidate CloudFront Cache ---
     if uploaded_files:

@@ -7,3 +7,7 @@ This document outlines key development rules to ensure consistency and maintaina
 
 ## Environment Variables
 - **Whenever an entry is added to `.env`, a corresponding placeholder entry must be added to `sample.env`.** This ensures that new environment variables are documented and easily discoverable for other developers. For example, if you add `API_KEY="your_key"` to `.env`, you should add `API_KEY=<your_api_key>` to `sample.env`.
+
+
+## Shell Commands
+- Commands for local execution should use PowerShell (PS) syntax, not Bash.

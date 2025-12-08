@@ -49,10 +49,20 @@ def find_distribution_id_for_bucket(bucket_name):
     try:
         cloudfront = boto3.client("cloudfront")
         distributions = cloudfront.list_distributions()
-        for dist in distributions.get('DistributionList', {}).get('Items', []):
+        items = distributions.get('DistributionList', {}).get('Items', [])
+        print(f"DEBUG: Checking {len(items)} distributions for bucket '{bucket_name}'")
+        for dist in items:
+            # Check Origins
             for origin in dist.get('Origins', {}).get('Items', []):
                 if bucket_name in origin.get('DomainName', ''):
+                    print(f"DEBUG: Found match in origin domain: {origin.get('DomainName', '')}")
                     return dist['Id']
+            # Check Aliases (CNAMEs)
+            aliases = dist.get('Aliases', {}).get('Items', [])
+            if bucket_name in aliases:
+                print(f"DEBUG: Found match in aliases: {aliases}")
+                return dist['Id']
+            # print(f"DEBUG: Checked {dist['Id']}, aliases: {aliases}")
     except ClientError as e:
         print(f"Error finding distribution: {e}")
     return None
@@ -83,7 +93,7 @@ def invalidate_cloudfront_cache(distribution_id, items):
     except ClientError as e:
         print(f"Error creating invalidation: {e}")
 
-def sync_to_s3(source_dir, bucket_name, files_to_sync):
+def sync_to_s3(source_dir, bucket_name, files_to_sync, args):
     """Syncs files from source_dir to an S3 bucket."""
     print(f"Syncing to S3 Bucket: {bucket_name}")
     
@@ -110,25 +120,73 @@ def sync_to_s3(source_dir, bucket_name, files_to_sync):
             content_type = 'application/octet-stream'
             
         try:
-            s3.upload_file(
-                local_path,
-                bucket_name,
-                file_key,
-                ExtraArgs={'ContentType': content_type}
-            )
-            print(f"{GREEN}Uploading '{file_key}' (changed)...{RESET}")
-            uploaded_files.append(file_key)
+            # We use global 'args' earlier but passed it here now.
+            if hasattr(args, 'dry_run') and args.dry_run:
+                print(f"[Dry Run] would upload '{file_key}' (changed).")
+            else:
+                s3.upload_file(
+                    local_path,
+                    bucket_name,
+                    file_key,
+                    ExtraArgs={'ContentType': content_type}
+                )
+                print(f"{GREEN}Uploading '{file_key}' (changed)...{RESET}")
+                uploaded_files.append(file_key)
         except ClientError as e:
-            print(f"Error uploading '{file_key}': {e}")
+             print(f"{RED}Failed to upload '{file_key}': {e}{RESET}")
 
-    # Invalidate the cache for the uploaded files
+
+    
+    # --- 6. Generate and Upload config.json ---
+    print(f"\n{CYAN}Generating config.json for bucket: {bucket_name}{RESET}")
+    config_data = {
+        "bucketName": bucket_name,
+        "region": AWS_REGION
+    }
+    config_json_path = os.path.join(source_dir, "config.json")
+    try:
+        with open(config_json_path, "w") as f:
+            json.dump(config_data, f, indent=4)
+        
+        # Upload it
+        s3_key = "config.json"
+        
+        if hasattr(args, 'dry_run') and args.dry_run:
+             print(f"[Dry Run] would upload {s3_key}")
+        else:
+             content_type = 'application/json'
+             s3.upload_file(
+                 config_json_path,
+                 bucket_name,
+                 s3_key,
+                 ExtraArgs={'ContentType': content_type}
+             )
+             print(f"{GREEN}Uploaded config.json{RESET}")
+             uploaded_files.append(s3_key)
+
+    except Exception as e:
+        print(f"{RED}Error generating/uploading config.json: {e}{RESET}")
+    finally:
+        if os.path.exists(config_json_path):
+            try:
+                os.remove(config_json_path)
+            except:
+                pass
+
+    # --- 7. Invalidate CloudFront ---
     if uploaded_files:
-        dist_id = find_distribution_id_for_bucket(bucket_name)
-        invalidate_cloudfront_cache(dist_id, uploaded_files)
+        if hasattr(args, 'dry_run') and args.dry_run:
+             print("[Dry Run] Skipping invalidation.")
+        else:
+             dist_id = find_distribution_id_for_bucket(bucket_name)
+             invalidate_cloudfront_cache(dist_id, uploaded_files)
     else:
         print("No files were uploaded, skipping invalidation.")
 
-def sync_to_directory(source_dir, target_dir, files_to_sync):
+
+
+
+def sync_to_directory(source_dir, target_dir, files_to_sync, args):
     """Syncs files from source_dir to a local target directory."""
     print(f"Syncing to Local Directory: {target_dir}")
     
@@ -189,6 +247,11 @@ def main():
         default=os.path.join(SCRIPT_DIR, "localhost"),
         help='Path to the source directory containing the files. Defaults to localhost in the script directory.'
     )
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Perform a dry run without uploading or modifying files.'
+    )
     args = parser.parse_args()
 
     print("--- Starting Framework Sync ---")
@@ -232,9 +295,9 @@ def main():
         # If it doesn't exist, and has no separators, assume S3 bucket.
         # If it has separators, assume it's a new directory path.
         if "\\" in target or "/" in target:
-             sync_to_directory(source_dir, os.path.abspath(target), files_to_sync)
+             sync_to_directory(source_dir, os.path.abspath(target), files_to_sync, args)
         else:
-             sync_to_s3(source_dir, target, files_to_sync)
+             sync_to_s3(source_dir, target, files_to_sync, args)
 
 if __name__ == "__main__":
     main()

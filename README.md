@@ -113,6 +113,7 @@ These files form the front-end framework for the SmartTranscript viewer. They ar
 *   **`loader.js`**: Manages the loading of other JavaScript modules.
 *   **`tour.js` / `tour.css`**: Code for a guided tour feature to introduce users to the interface.
 *   **`youtubePlayer.js`**: A wrapper for the YouTube IFrame API to standardize video player controls. Only required if the souce of you videos is YouTube.
+*   **`cls.html`**: A utility page that clears `localStorage` and `sessionStorage` to let testers simulate a first-time user experience.
 
 ## Hosting Your SmartTranscripts
 

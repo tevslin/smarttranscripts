@@ -13,19 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // We check for trailing slashes or explicit index.html
     const isIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('/');
 
-    if (isIndexPage) {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (!urlParams.has('no_redirect')) {
-            const lastOpened = localStorage.getItem('lastOpenedTranscript');
-            // Verify lastOpened is really a path and not "null" string
-            if (lastOpened && lastOpened !== 'null') {
-                window.location.href = lastOpened;
-                return; // Stop processing to avoid flash
-            }
-        }
-    } else {
+    if (!isIndexPage) {
         // We are on a transcript page. Save this as the last opened state.
-        // We use the pathname (e.g. /meetings/Committee/Date/transcript.html)
         localStorage.setItem('lastOpenedTranscript', window.location.pathname);
     }
 
@@ -52,16 +41,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         linkHrefGenerator: (path) => path
     });
 
-    // --- Fallback Redirection (Index Page Only) ---
-    // If we are still here (didn't redirect to lastOpened), and we are on index page,
-    // open the first item in the list.
+    // --- Redirection Logic (Index Page Only) ---
     if (isIndexPage) {
         const urlParams = new URLSearchParams(window.location.search);
         if (!urlParams.has('no_redirect')) {
-            // We didn't redirect to lastOpened, so try the first item
-            const firstLink = document.querySelector('#toc-content a.toc-link');
-            if (firstLink) {
-                window.location.href = firstLink.href;
+            let targetUrl = null;
+            const lastOpened = localStorage.getItem('lastOpenedTranscript');
+
+            if (lastOpened && lastOpened !== 'null') {
+                try {
+                    // Check if it exists
+                    const response = await fetch(lastOpened, { method: 'HEAD' });
+                    if (response.ok) {
+                        targetUrl = lastOpened;
+                    } else {
+                        console.warn("Last opened transcript not found (404/Error):", lastOpened);
+                    }
+                } catch (e) {
+                    console.warn("Error checking last opened transcript:", e);
+                }
+            }
+
+            // If no valid lastOpened, fallback to first item
+            if (!targetUrl) {
+                const firstLink = document.querySelector('#toc-content a.toc-link');
+                if (firstLink) {
+                    targetUrl = firstLink.href;
+                }
+            }
+
+            // Perform Redirect
+            if (targetUrl) {
+                window.location.href = targetUrl;
                 return;
             }
         }
