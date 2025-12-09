@@ -608,7 +608,8 @@ header h1 {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none;
+    /* Default hidden; JS toggles to flex */
     justify-content: center;
     align-items: center;
 }

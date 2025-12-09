@@ -4,87 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>San Francisco SmartTranscripts</title>
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1648.0.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <title>Redirecting...</title>
     <style>
-        /* Add styles for the collapsible directory */
-        #meeting-list-container ul,
-        #meeting-list-container ul ul {
-            list-style-type: none;
-            padding-left: 1rem;
-        }
-
-        #meeting-list li {
-            list-style-type: none;
-        }
-
-        .caret {
-            cursor: pointer;
-            user-select: none;
-            /* Prevent text selection */
-        }
-
-        .caret::before {
-            content: "\25B6";
-            /* Right-pointing triangle */
-            color: black;
-            display: inline-block;
-            margin-right: 6px;
-        }
-
-        .caret-down::before {
-            transform: rotate(90deg);
-        }
-
-        .nested {
+        body {
             display: none;
-            padding-left: 1rem;
-        }
-
-        .active {
-            display: block;
         }
     </style>
 </head>
 
 <body>
-    <div id="header-placeholder">
-        <header class="page-header">
-            <h1><a href="/index.html">SmartTranscripts</a></h1>
-        </header>
-    </div>
-    <div id="main-content">
-        <main id="content-container">
-            <div id="toc-pane" class="pinned">
-                <div id="toc-header">
-                    <h3>Meetings</h3>
-                    <button id="toc-pin-button" title="Unpin ToC">📌</button>
-                </div>
-                <div id="toc-content">
-                    <!-- Directory will be loaded here -->
-                </div>
-                <div id="toc-resize-handle"></div>
-            </div>
-            <div id="left-pane">
-                <!-- Navigation pane is empty on the index page -->
-            </div>
-            <div id="transcript-pane">
-                <div class="welcome-message">
-                    <h2>Select a meeting from the directory to see the SmartTranscript.</h2>
-                </div>
-            </div>
-        </main>
+    <!-- Minimal DOM structure required by toc_viewer.js/directory.js to function -->
+    <!-- These elements are hidden but exist so the scripts can build the directory and calculate which page to open -->
+    <div id="toc-pane">
+        <div id="toc-header"></div>
+        <div id="toc-content"></div>
+        <div id="toc-resize-handle"></div>
+        <button id="toc-pin-button"></button>
     </div>
 
-    <div id="footer-placeholder">
-        <footer class="page-footer">
-            <button id="about-button" class="standard-button">About this Project</button>
-        </footer>
-    </div>
-
+    <!-- Load the viewer logic which handles the redirection on index.html -->
     <script type="module" src="toc_viewer.js"></script>
-    <script src="common.js" defer></script>
-</body>
+</body> 
 
 </html>
